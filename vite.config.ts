@@ -30,7 +30,7 @@ export default defineConfig({
       const huecas = listSlugs('src/content/huecas').map((s) => `/huecas/${s}`)
       const resenas = listSlugs('src/content/resenas').map((s) => `/resenas/${s}`)
       const criticos = listSlugs('src/content/criticos').map((s) => `/criticos/${s}`)
-      const staticPaths = paths.filter((p) => !p.includes(':'))
+      const staticPaths = paths.filter((p) => !p.includes(':') && !p.startsWith('/_dev'))
       return [...new Set([...staticPaths, ...huecas, ...resenas, ...criticos])]
     },
   },

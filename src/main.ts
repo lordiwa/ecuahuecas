@@ -40,6 +40,12 @@ const routes = [
     name: 'mapa',
     component: () => import('./pages/mapa.vue'),
   },
+  {
+    path: '/_dev/editor',
+    name: 'dev-editor',
+    component: () => import('./pages/_dev/editor.vue'),
+    meta: { title: 'EcuaHuecas — Dev: Editor', dev: true },
+  },
 ]
 
 export const createApp = ViteSSG(App, { routes }, ({ app }) => {
