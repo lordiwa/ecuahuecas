@@ -1,0 +1,26 @@
+node_modules
+dist
+.DS_Store
+*.local
+.env
+.env.*
+!.env.example
+.vite
+*.log
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# Secrets
+secrets/
+*.pem
+*.key
+firebase-admin*.json
+
+# GSD runtime artifacts (commit specs in .planning/, not runtime state)
+.claude/worktrees/
+.claude/get-shit-done/state/
+.claude/sessions/
+
+# Build-time snapshots (regenerated each build)
+src/content-snapshot.json

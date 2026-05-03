@@ -1,0 +1,38 @@
+:root {
+  /* Paleta — bandera EC + tropical */
+  --amarillo: #FFCB05;
+  --amarillo-suave: #F4E4C1;
+  --rojo: #C73E1D;
+  --rojo-oscuro: #8B2C1A;
+  --azul: #1B3A6B;
+  --verde: #2D5016;
+  --verde-cebolla: #6FA84A;
+  --naranja: #E8833A;
+  --crema: #FFF8E7;
+  --tinta: #1A1A1A;
+  --papel: #F4E4C1;
+  --linea: #1A1A1A;
+
+  /* Tipografía */
+  --display: "Bowlby One", "Arial Black", sans-serif;
+  --titulo:  "Fraunces", Georgia, serif;
+  --texto:   "DM Sans", system-ui, sans-serif;
+  --mono:    "JetBrains Mono", ui-monospace, monospace;
+
+  /* Forma */
+  --borde: 2.5px solid var(--linea);
+  --sombra-bloque: 6px 6px 0 var(--linea);
+  --sombra-bloque-sm: 4px 4px 0 var(--linea);
+  --radio-sm: 4px;
+  --radio-md: 8px;
+  --radio-lg: 14px;
+}
+
+[data-theme="dark"] {
+  --papel: #1A1A1A;
+  --crema: #2A2A2A;
+  --tinta: #FFF8E7;
+  --linea: #FFF8E7;
+  --amarillo-suave: #3A3328;
+  --azul: #4A6FA0;
+}

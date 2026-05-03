@@ -1,0 +1,134 @@
+@import "./tokens.css";
+
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; padding: 0; }
+
+html, body {
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: var(--texto);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img, picture, svg, video {
+  display: block;
+  max-width: 100%;
+}
+
+a { color: inherit; }
+
+/* === Tipografía utilitaria === */
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 2.5px;
+  color: var(--rojo);
+}
+
+.h-display {
+  font-family: var(--display);
+  font-size: clamp(2.4rem, 6vw, 4.6rem);
+  line-height: 0.95;
+  letter-spacing: -0.5px;
+  color: var(--tinta);
+}
+
+.h-titulo {
+  font-family: var(--titulo);
+  font-weight: 800;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  line-height: 1.1;
+}
+
+.cuerpo-editorial {
+  font-family: var(--titulo);
+  font-size: 1.25rem;
+  line-height: 1.6;
+  color: var(--tinta);
+}
+
+/* === Botones === */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--display);
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 12px 20px;
+  border: var(--borde);
+  border-radius: var(--radio-sm);
+  background: var(--amarillo);
+  color: var(--tinta);
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: var(--sombra-bloque-sm);
+  transition: transform 80ms ease, box-shadow 80ms ease;
+}
+.btn:hover { transform: translate(-2px, -2px); box-shadow: var(--sombra-bloque); }
+.btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--linea); }
+
+.btn--rojo   { background: var(--rojo); color: var(--crema); }
+.btn--azul   { background: var(--azul); color: var(--crema); }
+.btn--blanco { background: var(--crema); color: var(--tinta); }
+.btn--ghost  { background: transparent; box-shadow: none; padding: 8px 14px; font-size: 12px; }
+.btn--ghost:hover { background: var(--amarillo-suave); transform: none; box-shadow: none; }
+
+/* === Chips === */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: 5px 10px;
+  border: 2px solid var(--linea);
+  border-radius: 999px;
+  background: var(--crema);
+  color: var(--tinta);
+}
+.chip--rojo     { background: var(--rojo); color: var(--crema); }
+.chip--azul     { background: var(--azul); color: var(--crema); }
+.chip--amarillo { background: var(--amarillo); }
+
+/* === Cards === */
+
+.card {
+  background: var(--crema);
+  border: var(--borde);
+  border-radius: var(--radio-md);
+  box-shadow: var(--sombra-bloque-sm);
+  padding: 20px;
+}
+.card--hover { transition: transform 100ms ease, box-shadow 100ms ease; cursor: pointer; }
+.card--hover:hover { transform: translate(-2px, -2px); box-shadow: var(--sombra-bloque); }
+
+/* === Layout utilities === */
+
+.container {
+  width: min(1200px, 100% - 48px);
+  margin-inline: auto;
+}
+
+.section {
+  padding-block: 56px;
+}
+
+.grid {
+  display: grid;
+  gap: 24px;
+}
+.grid--3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.grid--2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
