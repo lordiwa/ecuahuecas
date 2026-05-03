@@ -13,7 +13,7 @@ desde: 1985
 tags: [encebollado, pescado, desayuno, mercado]
 fotos: []
 descripcion: Caldo claro pero con cuerpo, albacora del día, yuca al punto y bastante cebolla curtida. Se come parado, codo con codo con choferes y oficinistas a las 7 AM. La señora Carmen no acepta tarjeta.
-coords: { x: 65, y: 30 }
+coords: { lat: -2.1894, lng: -79.8866 }
 ---
 
 Llegar antes de las 8 AM porque después se acaba la albacora buena. Doña Carmen sirve en plato hondo de loza, no plástico, lo cual ya dice algo del puesto.

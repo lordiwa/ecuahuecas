@@ -13,7 +13,7 @@ desde: 1972
 tags: [seco, chivo, almuerzo, tradicional]
 fotos: []
 descripcion: Don Cali lleva medio siglo cocinando el mismo seco. Carne suave, jugo espeso, arroz amarillo achiotado y un aguacate que se deshace solo. Atención de barrio, sin lujos, sin trampas.
-coords: { x: 42, y: 58 }
+coords: { lat: -0.2105, lng: -78.4868 }
 ---
 
 El local es chico, ocho mesas máximo. Las paredes tienen fotos amarillentas de don Cali con futbolistas y políticos de los noventa. El menú no ha cambiado y eso es lo bueno.

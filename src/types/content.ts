@@ -22,7 +22,7 @@ export const HuecaFrontmatter = z.object({
   fotos: z.array(z.string()).default([]),
   descripcion: z.string().optional(),
   coords: z
-    .object({ x: z.number(), y: z.number() })
+    .object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) })
     .optional(),
 })
 export type HuecaFrontmatter = z.infer<typeof HuecaFrontmatter>
