@@ -46,6 +46,12 @@ const routes = [
     component: () => import('./pages/_dev/editor.vue'),
     meta: { title: 'EcuaHuecas — Dev: Editor', dev: true },
   },
+  {
+    path: '/_dev/uploader',
+    name: 'dev-uploader',
+    component: () => import('./pages/_dev/uploader.vue'),
+    meta: { title: 'EcuaHuecas — Dev: Uploader', dev: true },
+  },
 ]
 
 export const createApp = ViteSSG(App, { routes }, ({ app }) => {
