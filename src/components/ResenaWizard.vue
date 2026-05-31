@@ -152,12 +152,26 @@ async function onGenerar() {
 
 async function onPublicar() {
   if (publishing.value) return
+  // Block publishing a draft whose photos lost their live blobs (e.g. reopened
+  // after a refresh): photosToPublishInputs would silently drop them and we'd
+  // publish imageless with no error. Publish is reachable from any step, so the
+  // step-4-only re-upload banner is not enough — guard here too.
+  if (showReuploadWarning.value) {
+    publishError.value =
+      'Las fotos de este borrador se perdieron al recargar. Vuelve a subirlas antes de publicar.'
+    return
+  }
   publishing.value = true
   publishError.value = null
   publishedSlug.value = null
   try {
     const photoInputs = await photosToPublishInputs(photos.value)
     const payloadPhotos = buildPublishPhotos(photoInputs, heroId.value)
+    // Defense in depth: if we meant to send photos but none survived shaping,
+    // abort rather than silently publish an imageless reseña.
+    if (photos.value.length > 0 && payloadPhotos.length === 0) {
+      throw new Error('No se pudo preparar ninguna foto para subir. Vuelve a subirlas e inténtalo de nuevo.')
+    }
     const result = await publishResena({
       huecaMode: huecaMode.value,
       huecaId: huecaMode.value === 'existente' ? huecaId.value : null,

@@ -145,8 +145,14 @@ export function blobToBase64(blob: Blob): Promise<string> {
 
 /**
  * Resolve every in-memory draft photo's blob to base64, returning the inputs to
- * {@link buildPublishPhotos}. Photos without a live blob are skipped (their
- * blob:-URLs are dead after a refresh — the wizard warns the user to re-upload).
+ * {@link buildPublishPhotos}. Photos without a live blob are SKIPPED (their
+ * blob:-URLs are dead after a refresh).
+ *
+ * CALLER CONTRACT: this silently drops blob-less photos, so the count of the
+ * result may be smaller than the input. Callers that intend to publish photos
+ * MUST guard against publishing imageless — compare `result.length` to the
+ * number of photos the user expected and abort/warn on a mismatch (the wizard's
+ * `onPublicar` does this via its re-upload guard + a post-shape length check).
  */
 export async function photosToPublishInputs(
   photos: DraftPhotoInMemory[],
