@@ -11,6 +11,7 @@
 // settings and the server-side Cloud Function that holds true secrets.
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app'
 import { getAuth, type Auth } from 'firebase/auth'
+import { getFunctions, type Functions } from 'firebase/functions'
 
 interface FirebaseClientConfig {
   apiKey: string
@@ -50,6 +51,7 @@ function readConfig(): FirebaseClientConfig {
 
 let app: FirebaseApp | null = null
 let auth: Auth | null = null
+let functions: Functions | null = null
 
 /** Lazily initialize (or reuse) the Firebase app. Throws if config is missing. */
 export function getFirebaseApp(): FirebaseApp {
@@ -63,4 +65,15 @@ export function getFirebaseAuth(): Auth {
   if (auth) return auth
   auth = getAuth(getFirebaseApp())
   return auth
+}
+
+/**
+ * Lazily obtain the Functions instance (default region). Used by the admin
+ * pages to call the role-management callables. Throws if config is missing,
+ * same as the rest of this module.
+ */
+export function getFirebaseFunctions(): Functions {
+  if (functions) return functions
+  functions = getFunctions(getFirebaseApp())
+  return functions
 }

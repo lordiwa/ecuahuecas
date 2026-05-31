@@ -13,6 +13,14 @@ import {
   type ResenaDraft,
   type DraftPhotoInMemory,
 } from '@/lib/drafts'
+import { useAuth } from '@/composables/useAuth'
+import { useRole } from '@/composables/useRole'
+
+// Role-gating: "Publicar" requires crítico/admin; "Guardar borrador" only needs
+// authentication. The /admin guard normally prevents unauthenticated access, so
+// the unauthenticated UI here is just a graceful fallback for transient states.
+const { isAuthenticated } = useAuth()
+const { isCritico } = useRole()
 
 // Keep TipTap (and its bundle) out of the main chunk: only loaded under /admin.
 const RichTextEditor = defineAsyncComponent(() => import('@/components/RichTextEditor.vue'))
@@ -232,8 +240,22 @@ function backToList() {
       </div>
       <div class="action-group">
         <span v-if="savedAt" class="saved-note">Guardado {{ savedAt }}</span>
-        <button type="button" class="btn btn--blanco" @click="onGuardar">Guardar borrador</button>
-        <button type="button" class="btn btn--rojo" @click="onPublicar">Publicar</button>
+        <template v-if="isAuthenticated">
+          <!-- Any authenticated user may save a draft. -->
+          <button type="button" class="btn btn--blanco" @click="onGuardar">Guardar borrador</button>
+          <!-- Publishing is reserved for críticos and admins. -->
+          <button
+            v-if="isCritico"
+            type="button"
+            class="btn btn--rojo"
+            @click="onPublicar"
+          >
+            Publicar
+          </button>
+        </template>
+        <span v-else class="auth-hint">
+          <RouterLink to="/login">Inicia sesión</RouterLink> para guardar o publicar.
+        </span>
       </div>
     </div>
   </div>
@@ -348,6 +370,12 @@ textarea.input { resize: vertical; }
   text-transform: uppercase;
   letter-spacing: 1px;
 }
+.auth-hint {
+  font-family: var(--texto);
+  font-size: 13px;
+  opacity: 0.8;
+}
+.auth-hint a { color: var(--rojo); font-weight: 700; }
 
 @media (max-width: 720px) {
   .wizard-actions { flex-direction: column; align-items: stretch; }
