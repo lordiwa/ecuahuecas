@@ -66,3 +66,97 @@ export const bootstrapAdmin = onCall(async (request) => {
 
   return { ok: true, uid: auth.uid, admin: true }
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROLE MANAGEMENT (admin only)
+//
+// grantCriticoRole / revokeCriticoRole / listCriticos power the
+// /admin/usuarios page. Each FAILS CLOSED: the caller must already hold the
+// `admin` custom claim. `unauthenticated` when no auth; `permission-denied`
+// otherwise. Claims are merged (never blindly overwritten) so granting/revoking
+// `critico` preserves an existing `admin` claim and vice versa.
+//
+// DEPLOY (user's later step — needs `firebase login` + Blaze):
+//   (cd functions && npm install)
+//   firebase deploy --only functions:grantCriticoRole,functions:revokeCriticoRole,functions:listCriticos
+//
+// NOTE: role changes only take effect after the TARGET user refreshes their ID
+// token (client calls `getIdToken(true)` — exposed as `refreshClaims()` in the
+// app's useRole composable).
+//
+// TODO(appcheck): add `enforceAppCheck: true` to these onCall options once App
+// Check is wired on the client. Not blocking this ticket.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Throw unless the caller is authenticated AND holds `admin === true`.
+ * Returns the verified auth context.
+ */
+function assertCallerIsAdmin(request) {
+  const auth = request.auth
+  if (!auth) {
+    throw new HttpsError('unauthenticated', 'Debes iniciar sesión.')
+  }
+  if (auth.token.admin !== true) {
+    throw new HttpsError('permission-denied', 'Requiere privilegios de administrador.')
+  }
+  return auth
+}
+
+/** Validate and return a non-empty string uid from the request payload. */
+function requireUid(data) {
+  const uid = data && typeof data.uid === 'string' ? data.uid.trim() : ''
+  if (!uid) {
+    throw new HttpsError('invalid-argument', 'Falta el uid del usuario.')
+  }
+  return uid
+}
+
+/** Read a user's existing custom claims (never returns null). */
+async function existingClaims(uid) {
+  const user = await getAuth().getUser(uid)
+  return user.customClaims || {}
+}
+
+export const grantCriticoRole = onCall(async (request) => {
+  assertCallerIsAdmin(request)
+  const uid = requireUid(request.data)
+
+  // Merge so we preserve any other claims (e.g. admin).
+  const claims = await existingClaims(uid)
+  await getAuth().setCustomUserClaims(uid, { ...claims, critico: true })
+
+  return { ok: true, uid, critico: true }
+})
+
+export const revokeCriticoRole = onCall(async (request) => {
+  assertCallerIsAdmin(request)
+  const uid = requireUid(request.data)
+
+  // Strip `critico` only; keep everything else.
+  const claims = await existingClaims(uid)
+  const { critico: _drop, ...rest } = claims
+  await getAuth().setCustomUserClaims(uid, rest)
+
+  return { ok: true, uid, critico: false }
+})
+
+export const listCriticos = onCall(async (request) => {
+  assertCallerIsAdmin(request)
+
+  // Small team — cap at one page (max 1000; we ask for 100). No pagination UI.
+  const result = await getAuth().listUsers(100)
+  const users = result.users.map((u) => {
+    const claims = u.customClaims || {}
+    return {
+      uid: u.uid,
+      email: u.email || null,
+      displayName: u.displayName || null,
+      photoURL: u.photoURL || null,
+      admin: claims.admin === true,
+      critico: claims.critico === true,
+    }
+  })
+
+  return { users }
+})
