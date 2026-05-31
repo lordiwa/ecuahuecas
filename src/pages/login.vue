@@ -18,7 +18,15 @@ const password = ref('')
 
 function nextDestination(): string {
   const next = route.query.next
-  if (typeof next === 'string' && next.startsWith('/')) return next
+  // Only allow same-site absolute paths. Reject protocol-relative ("//evil.com")
+  // and backslash variants to prevent open redirects.
+  if (
+    typeof next === 'string' &&
+    next.startsWith('/') &&
+    !next.startsWith('//') &&
+    !next.startsWith('/\\')
+  )
+    return next
   return '/'
 }
 
