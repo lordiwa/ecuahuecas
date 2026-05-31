@@ -30,9 +30,14 @@
       "author": "orchestrator",
       "at": "2026-05-31T04:12:25.387Z",
       "body": "Nota traída del review de TASK-010 (A.4): las rutas /admin/** existen sin gate de auth (intencional para A.4). En A.6, además del router guard, asegurar que las páginas /admin no queden expuestas: ya se excluyeron del crawling de vite-ssg para que no se pre-rendericen como HTML estático en prod, pero el bundle JS de las rutas sí se sirve — el gate de auth + claim debe proteger el acceso real. Verificar que un anónimo que navegue directo a /admin/resenas sea redirigido a /login?next=."
+    },
+    {
+      "author": "orchestrator",
+      "at": "2026-05-31T16:20:32.787Z",
+      "body": "Insumos del review de TASK-011 para cuando se implemente el gate: (1) useAuth expone `ready` (true tras la 1ª resolución de auth) pero si falta config Firebase, el listener falla y resetea, dejando `ready=true` + `currentUser=null` — el router guard NO debe interpretar `ready && !currentUser` como 'deslogueado definitivo' cuando en realidad la config no cargó. Distinguir un estado `authConfigured`/`authError` antes de redirigir a /login (evita loops/falsos negativos). (2) Defense-in-depth: considerar App Check (`onCall({enforceAppCheck:true})`) para bootstrapAdmin y las Cloud Functions de A.7 — el endpoint es invocable por cualquier usuario autenticado; la escalada ya está bloqueada por el check de email_verified + ADMIN_EMAIL, pero App Check reduce superficie de abuso. (3) El gate debe redirigir a /login?next=<ruta>; el manejo de `next` ya está endurecido contra open-redirect en login.vue."
     }
   ],
   "created_at": "2026-05-31T03:41:04.073Z",
-  "updated_at": "2026-05-31T04:12:25.387Z",
+  "updated_at": "2026-05-31T16:20:32.787Z",
   "jira_key": null
 }

@@ -11,7 +11,7 @@
     "Cloud Function bootstrapAdmin setea claim admin:true para email hardcoded, con doc de invocación",
     "Verificado: login Google y Email/Password, claim admin visible en el token"
   ],
-  "status": "todo",
+  "status": "done",
   "priority": "medium",
   "labels": [
     "migrated-from-gsd",
@@ -28,6 +28,6 @@
   "linked_prs": [],
   "comments": [],
   "created_at": "2026-05-31T03:40:49.591Z",
-  "updated_at": "2026-05-31T03:40:49.591Z",
+  "updated_at": "2026-05-31T16:20:32.954Z",
   "jira_key": null
 }

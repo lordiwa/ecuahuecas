@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-31T15:36:38.285Z",
+  "generated_at": "2026-05-31T16:20:32.954Z",
   "tasks": [
     {
       "key": "TASK-006",
@@ -34,7 +34,7 @@
     {
       "key": "TASK-011",
       "title": "Fase 02 A.5 — Firebase Auth (login funcional, sin gate aún)",
-      "status": "todo",
+      "status": "done",
       "priority": "medium"
     },
     {
