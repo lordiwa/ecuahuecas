@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/_dev/editor)",
+      "Bash(curl -s http://localhost:5173/_dev/editor)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/_dev/uploader)",
+      "Bash(curl -s -o /dev/null -w \"mapa=%{http_code}\\\\n\" http://localhost:5173/mapa)",
+      "Bash(curl -s -o /dev/null -w \"picker=%{http_code}\\\\n\" http://localhost:5173/_dev/picker)",
+      "Bash(git *)"
     ]
   }
 }
