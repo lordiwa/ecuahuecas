@@ -1,0 +1,29 @@
+{
+  "key": "TASK-016",
+  "title": "Fase 02 A.x — Publicar blog-component + instalar en ecuahuecas + cliente Sanity",
+  "description": "Publicar la librería reutilizable blog-component (ya con git init + commit + remote a github.com/lordiwa/blog-component) como repo PÚBLICO, e integrarla en ecuahuecas. Pasos: (1) push del repo público (requiere gh auth login del usuario); (2) en ecuahuecas, instalar como dependencia desde GitHub: `npm i github:lordiwa/blog-component` (peer dep vue ^3.4 ya satisfecha por 3.5; el build se genera vía el hook prepare); (3) configurar el cliente de LECTURA Sanity reutilizando el proyecto de blog-component (projectId gvc4yjqj, dataset production) con vars públicas VITE_SANITY_PROJECT_ID / VITE_SANITY_DATASET en .env.local (.env.example documentado); (4) crear src/lib/sanity.ts que use createBlogClient() y exponga getPostList/getPostBySlug tipados; (5) registrar el origin de dev (http://localhost:5173) en sanity.io/manage → CORS. NO se tocan secretos (write token / Anthropic key son de la Cloud Function en A.7).",
+  "acceptance_criteria": [
+    "Repo blog-component público y pusheado a github.com/lordiwa/blog-component (rama main)",
+    "ecuahuecas package.json incluye blog-component como dependencia (instalada desde GitHub) y resuelve sus imports",
+    ".env.local + .env.example de ecuahuecas con VITE_SANITY_PROJECT_ID=gvc4yjqj y VITE_SANITY_DATASET=production (sin secretos)",
+    "src/lib/sanity.ts expone un cliente Sanity configurado y getPostList/getPostBySlug type-checkean",
+    "npm run typecheck verde con la nueva dependencia",
+    "Origin http://localhost:5173 añadido a CORS del proyecto Sanity"
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "phase-02",
+    "sanity",
+    "blog-component",
+    "integration"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-05-31T04:36:05.736Z",
+  "updated_at": "2026-05-31T04:55:14.245Z",
+  "jira_key": null
+}

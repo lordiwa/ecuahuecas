@@ -1,0 +1,29 @@
+{
+  "key": "TASK-017",
+  "title": "Fase 02 A.x — Esquemas Sanity de ecuahuecas (hueca/critico/resena) + migración del seed",
+  "description": "En el Studio de Sanity reutilizado (blog-component/studio, proyecto gvc4yjqj/production) añadir los tipos de documento del dominio ecuahuecas como tipos NUEVOS y separados (no mezclar con post/author/category de blog-component): `hueca` (nombre, slug, ciudad enum Quito|Guayaquil|Cuenca|Manta, barrio, direccion, plato_estrella, precio enum $|$$|$$$, rating, reviews, horario, desde, tags[], fotos[], descripcion, coords {lat,lng}, activa bool); `critico` (≈author: nombre, slug, image, bio, ciudad, especialidad, desde, activo); `resena` (≈post: titulo, slug, hueca→ref, critico→ref, publishedAt/fecha, rating, excerpt/extracto, body blockContent reutilizado, veredicto {aFavor[], enContra[], ticket}, imagen, activa, featured). Reutilizar blockContent de blog-component. Desplegar el studio (sanity deploy). Migrar el seed markdown existente (2 huecas, 2 criticos, 1 resena de src/content/**) a Sanity con un script one-off (write token server-side; autoGenerateArrayKeys; coords reales {lat,lng}). Mantiene compatibilidad con el mapa (A.3) porque coords sigue siendo {lat,lng}.",
+  "acceptance_criteria": [
+    "Esquemas hueca, critico, resena definidos en studio/schemaTypes y desplegados a gvc4yjqj",
+    "coords modelado como {lat,lng} (compatible con MapLibre/UbicacionPicker de A.3)",
+    "resena referencia hueca y critico; body usa blockContent (PortableText)",
+    "Seed migrado: 2 huecas + 2 criticos + 1 resena visibles en Sanity",
+    "Queries GROQ devuelven el seed con refs resueltas (autor/hueca)"
+  ],
+  "status": "todo",
+  "priority": "high",
+  "labels": [
+    "phase-02",
+    "sanity",
+    "content-model"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-016"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-05-31T04:36:17.879Z",
+  "updated_at": "2026-05-31T04:36:17.879Z",
+  "jira_key": null
+}

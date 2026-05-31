@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-31T04:15:51.050Z",
+  "generated_at": "2026-05-31T04:55:14.245Z",
   "tasks": [
     {
       "key": "TASK-006",
@@ -45,7 +45,7 @@
     },
     {
       "key": "TASK-013",
-      "title": "Fase 02 A.7 — Persistencia Firestore + Storage (cierre del andamio)",
+      "title": "Fase 02 A.7 — Persistencia Sanity vía Cloud Function (publicar reseñas + IA + imágenes)",
       "status": "todo",
       "priority": "medium"
     },
@@ -58,6 +58,24 @@
     {
       "key": "TASK-015",
       "title": "Fase 04 — Firebase Hosting deploy + GitHub Actions (cron de rebuild)",
+      "status": "todo",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-016",
+      "title": "Fase 02 A.x — Publicar blog-component + instalar en ecuahuecas + cliente Sanity",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-017",
+      "title": "Fase 02 A.x — Esquemas Sanity de ecuahuecas (hueca/critico/resena) + migración del seed",
+      "status": "todo",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-018",
+      "title": "Fase 02 A.x — Render público de reseñas (PortableText) + snapshot SSG desde Sanity",
       "status": "todo",
       "priority": "medium"
     }

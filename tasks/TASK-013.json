@@ -1,27 +1,30 @@
 {
   "key": "TASK-013",
-  "title": "Fase 02 A.7 — Persistencia Firestore + Storage (cierre del andamio)",
-  "description": "Migrar la persistencia de localStorage a Firestore + Storage. Colecciones huecas/resenas/criticos con reglas estrictas (read público; write por rol). Reglas Storage (/resenas/{uid}/{slug}/{file}, write solo dueño crítico, max 2MB, mime image/*). Tests con Firebase Emulator + @firebase/rules-unit-testing. Cablear el botón Publicar del wizard A.4: subir fotos a Storage, reemplazar blob URLs por URLs públicas, escribir doc(s) a Firestore, borrar draft de localStorage, toast con link. Scripts seed-firestore.ts y snapshot-firestore.ts (genera src/content-snapshot.json para SSG). Reescribir src/lib/content.ts para leer del snapshot. Migrado desde GSD (decisiones D7, D9). Cierra el milestone de andamio.",
+  "title": "Fase 02 A.7 — Persistencia Sanity vía Cloud Function (publicar reseñas + IA + imágenes)",
+  "description": "RE-PLANEADO (antes Firestore+Storage). Persistencia sobre Sanity con escritura segura server-side. Una Firebase Cloud Function actúa de proxy que guarda los secretos SANITY_WRITE_TOKEN (scope Administrator — un token Viewer da 403) y ANTHROPIC_API_KEY, y expone: (a) generar borrador del cuerpo de la reseña con blog-component generatePostBody (Claude) → PortableText; (b) subir imágenes a Sanity image assets vía el write-adapter (useImageUpload del lib); (c) publicar/actualizar documentos resena (+ hueca nueva si aplica) en Sanity gvc4yjqj. El wizard de /admin (TASK-010) COMBINA IA + edición: pide borrador a la IA, el crítico lo refina, sube fotos y publica. Solo críticos autenticados (claim de Firebase Auth, A.5/A.6) pueden invocar la función. La lectura pública sigue siendo el snapshot build-time (TASK-018). Los secretos se configuran en Firebase Functions (config/secret manager) — nunca en el bundle del browser ni en el repo. Cierra el milestone de andamio.",
   "acceptance_criteria": [
-    "Reglas Firestore: huecas (read público/write admin), resenas (read activa==true, create critico, update dueño o admin, delete admin), criticos (read público/write admin)",
-    "Reglas Storage estrictas (dueño crítico, max 2MB, image/*) con tests en Emulator",
-    "Botón Publicar sube fotos a Storage, escribe a Firestore y borra el draft local con toast de éxito",
-    "scripts/seed-firestore.ts sube el seed markdown (idempotente, slug=docID)",
-    "scripts/snapshot-firestore.ts genera src/content-snapshot.json y content.ts lee del snapshot (SSG intacto)",
-    "Visitantes anónimos no leen Firestore en runtime (snapshot en build)"
+    "Cloud Function desplegada con SANITY_WRITE_TOKEN (Administrator) y ANTHROPIC_API_KEY server-side; ningún secreto llega al browser ni al repo",
+    "Solo usuarios autenticados con rol crítico/admin (Firebase Auth claim) pueden invocar la función (rechazo a anónimos)",
+    "El wizard puede pedir un borrador con IA (generatePostBody) y el crítico editarlo antes de publicar",
+    "El wizard sube fotos a Sanity image assets (alt/caption/credit/size) reemplazando blob URLs",
+    "Publicar escribe un documento resena (y hueca nueva si se creó) en Sanity gvc4yjqj con autoGenerateArrayKeys; borra el draft local con toast + link",
+    "El contenido publicado aparece en el siguiente build (snapshot de TASK-018) para lectores anónimos"
   ],
   "status": "todo",
   "priority": "medium",
   "labels": [
-    "migrated-from-gsd",
     "phase-02",
     "andamio",
-    "firebase",
-    "firestore"
+    "sanity",
+    "firebase-auth",
+    "cloud-function",
+    "ai"
   ],
   "assignee": null,
   "depends_on": [
-    "TASK-012"
+    "TASK-012",
+    "TASK-016",
+    "TASK-017"
   ],
   "linked_commits": [],
   "linked_prs": [],
