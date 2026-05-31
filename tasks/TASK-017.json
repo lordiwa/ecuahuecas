@@ -9,7 +9,7 @@
     "Seed migrado: 2 huecas + 2 criticos + 1 resena visibles en Sanity",
     "Queries GROQ devuelven el seed con refs resueltas (autor/hueca)"
   ],
-  "status": "todo",
+  "status": "done",
   "priority": "high",
   "labels": [
     "phase-02",
@@ -24,6 +24,6 @@
   "linked_prs": [],
   "comments": [],
   "created_at": "2026-05-31T04:36:17.879Z",
-  "updated_at": "2026-05-31T04:36:17.879Z",
+  "updated_at": "2026-05-31T05:13:59.005Z",
   "jira_key": null
 }

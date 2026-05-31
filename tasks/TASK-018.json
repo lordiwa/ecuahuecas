@@ -23,8 +23,14 @@
   ],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-05-31T05:14:04.209Z",
+      "body": "DECISIÓN (de la verificación de TASK-017): el snapshot build-time DEBE leer de Sanity con un READ token server-side, NO anónimo. Hecho observado: el dataset gvc4yjqj/production es aclMode=public y los docs hueca/critico/resena están publicados (ids limpios, sin drafts, refs resuelven con token), pero el path de lectura ANÓNIMA de Sanity no los devuelve (post/author antiguos sí; todos los caminos anónimos CDN/live dan hueca:0). Con token se ven perfecto. Por eso: (1) el script de snapshot usa un read token (reusar el de blog-component .env o crear uno read-only), corre en build (server-side, token nunca al browser); (2) NO usar el cliente tokenless src/lib/sanity.ts para el snapshot (daría 0). El sitio se sirve como HTML estático (zero-JS), así que los lectores no consultan Sanity en runtime. Pendiente menor a revisar luego en el dashboard de Sanity: por qué la lectura anónima no refleja los docs API-escritos (posible cache/purge) — no bloquea."
+    }
+  ],
   "created_at": "2026-05-31T04:36:28.668Z",
-  "updated_at": "2026-05-31T04:36:28.668Z",
+  "updated_at": "2026-05-31T05:14:04.209Z",
   "jira_key": null
 }

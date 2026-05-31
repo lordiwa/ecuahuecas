@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-31T04:55:14.245Z",
+  "generated_at": "2026-05-31T05:14:04.209Z",
   "tasks": [
     {
       "key": "TASK-006",
@@ -70,7 +70,7 @@
     {
       "key": "TASK-017",
       "title": "Fase 02 A.x — Esquemas Sanity de ecuahuecas (hueca/critico/resena) + migración del seed",
-      "status": "todo",
+      "status": "done",
       "priority": "high"
     },
     {
