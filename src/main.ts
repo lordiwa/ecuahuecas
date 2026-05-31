@@ -144,4 +144,22 @@ export const createApp = ViteSSG(App, { routes }, ({ app, router, isClient }) =>
 
     return true
   })
+
+  // DEV-only one-time admin bootstrap helper. Sign in as the ADMIN_EMAIL, then
+  // run `await hacermeAdmin()` in the browser console to call the deployed
+  // bootstrapAdmin callable and refresh your token. Never shipped to prod.
+  if (import.meta.env.DEV && isClient) {
+    ;(window as unknown as Record<string, unknown>).hacermeAdmin = async () => {
+      const { getFirebaseFunctions } = await import('./lib/firebase')
+      const { httpsCallable } = await import('firebase/functions')
+      const { useRole } = await import('./composables/useRole')
+      const res = await httpsCallable(getFirebaseFunctions(), 'bootstrapAdmin')()
+      await useRole().refreshClaims()
+      console.log('[hacermeAdmin] resultado:', res.data)
+      return res.data
+    }
+    console.info(
+      '[dev] Para hacerte admin: inicia sesión como el ADMIN_EMAIL y ejecuta  await hacermeAdmin()  en la consola.',
+    )
+  }
 })
