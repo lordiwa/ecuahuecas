@@ -10,7 +10,7 @@
     "Cloud Functions grantCriticoRole y revokeCriticoRole verifican claim admin del caller",
     "Verificado: anónimo redirigido a login; admin promueve crítico; crítico ve Publicar"
   ],
-  "status": "todo",
+  "status": "done",
   "priority": "medium",
   "labels": [
     "migrated-from-gsd",
@@ -38,6 +38,6 @@
     }
   ],
   "created_at": "2026-05-31T03:41:04.073Z",
-  "updated_at": "2026-05-31T16:20:32.787Z",
+  "updated_at": "2026-05-31T16:39:56.823Z",
   "jira_key": null
 }

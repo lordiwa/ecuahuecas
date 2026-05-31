@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-31T16:20:32.954Z",
+  "generated_at": "2026-05-31T16:39:56.823Z",
   "tasks": [
     {
       "key": "TASK-006",
@@ -40,7 +40,7 @@
     {
       "key": "TASK-012",
       "title": "Fase 02 A.6 — Gate de auth + roles + admin de usuarios",
-      "status": "todo",
+      "status": "done",
       "priority": "medium"
     },
     {
