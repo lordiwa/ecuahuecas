@@ -1,0 +1,343 @@
+<script setup lang="ts">
+import { ref, reactive, computed, watch, onBeforeUnmount, defineAsyncComponent } from 'vue'
+import { useRouter } from 'vue-router'
+import Stepper from '@/components/Stepper.vue'
+import Estrellas from '@/components/Estrellas.vue'
+import UbicacionPicker from '@/components/UbicacionPicker.vue'
+import PhotoUploader, { type Photo } from '@/components/PhotoUploader.vue'
+import { huecas } from '@/lib/content'
+import { Ciudad } from '@/types/content'
+import {
+  saveDraft,
+  type ResenaDraft,
+  type DraftPhotoInMemory,
+} from '@/lib/drafts'
+
+// Keep TipTap (and its bundle) out of the main chunk: only loaded under /admin.
+const RichTextEditor = defineAsyncComponent(() => import('@/components/RichTextEditor.vue'))
+
+const props = defineProps<{
+  /** Seed wizard state. The id is the draft's localStorage id. */
+  initial: ResenaDraft
+}>()
+
+const router = useRouter()
+
+const STEPS = ['Hueca', 'Rating', 'Reseña', 'Fotos']
+const CIUDADES = Ciudad.options
+
+// Local, mutable copy of the incoming draft.
+const id = props.initial.id
+const step = ref(props.initial.step >= 1 && props.initial.step <= 4 ? props.initial.step : 1)
+const huecaMode = ref<'existente' | 'nueva'>(props.initial.huecaMode)
+const huecaId = ref<string | null>(props.initial.huecaId)
+const nuevaHueca = reactive({ ...props.initial.nuevaHueca })
+const rating = ref(props.initial.rating)
+const titulo = ref(props.initial.titulo)
+const tagline = ref(props.initial.tagline)
+const body = ref(props.initial.body)
+const veredicto = ref(props.initial.veredicto)
+// PhotoUploader works with Photo[] (which require a blob); seeded draft photos
+// have no blob (lost on refresh), so we keep our own in-memory array.
+const photos = ref<DraftPhotoInMemory[]>([...props.initial.photos])
+const heroId = ref<string | null>(props.initial.heroId)
+
+const savedAt = ref<string | null>(null)
+
+const huecaActual = computed(() => huecas.find((h) => h.slug === huecaId.value) ?? null)
+
+function buildDraft(): ResenaDraft {
+  return {
+    id,
+    updatedAt: new Date().toISOString(),
+    step: step.value,
+    huecaMode: huecaMode.value,
+    huecaId: huecaMode.value === 'existente' ? huecaId.value : null,
+    nuevaHueca: { ...nuevaHueca },
+    rating: rating.value,
+    titulo: titulo.value,
+    tagline: tagline.value,
+    body: body.value,
+    veredicto: veredicto.value,
+    photos: photos.value,
+    heroId: heroId.value,
+  }
+}
+
+function onGuardar() {
+  const draft = buildDraft()
+  saveDraft(draft)
+  savedAt.value = new Date().toLocaleTimeString()
+}
+
+function onPublicar() {
+  // Placeholder until the publish-to-Firestore ticket. Strip blobs from the
+  // logged payload too so the console stays readable.
+  const draft = buildDraft()
+  // eslint-disable-next-line no-console
+  console.log(JSON.stringify(draft, null, 2))
+}
+
+function next() {
+  if (step.value < STEPS.length) step.value += 1
+}
+function prev() {
+  if (step.value > 1) step.value -= 1
+}
+
+function setRating(n: number) {
+  rating.value = n
+}
+
+// PhotoUploader emits Photo[] (with blob); store as-is in memory.
+function onPhotos(updated: Photo[]) {
+  photos.value = updated
+}
+
+// Revoke any blob URLs we own when leaving, to avoid leaks.
+onBeforeUnmount(() => {
+  for (const p of photos.value) {
+    if (p.blob && p.url.startsWith('blob:')) URL.revokeObjectURL(p.url)
+  }
+})
+
+// Reset the "saved" indicator whenever the user edits something.
+watch([titulo, tagline, body, veredicto, rating, huecaId, huecaMode], () => {
+  savedAt.value = null
+})
+
+function backToList() {
+  router.push({ name: 'admin-resenas' })
+}
+</script>
+
+<template>
+  <div class="wizard">
+    <Stepper :steps="STEPS" v-model:step="step" />
+
+    <!-- Step 1: Hueca -->
+    <section v-show="step === 1" class="wizard-step">
+      <h2 class="wizard-h">1 · ¿Qué hueca reseñas?</h2>
+
+      <div class="mode-switch">
+        <label class="radio">
+          <input type="radio" value="existente" v-model="huecaMode" />
+          <span>Hueca existente</span>
+        </label>
+        <label class="radio">
+          <input type="radio" value="nueva" v-model="huecaMode" />
+          <span>Crear nueva hueca</span>
+        </label>
+      </div>
+
+      <div v-if="huecaMode === 'existente'" class="field">
+        <label class="field-label" for="hueca-select">Hueca</label>
+        <select id="hueca-select" v-model="huecaId" class="input">
+          <option :value="null" disabled>Elige una hueca…</option>
+          <option v-for="h in huecas" :key="h.slug" :value="h.slug">
+            {{ h.nombre }} — {{ h.ciudad }}
+          </option>
+        </select>
+        <p v-if="huecaActual" class="hint">
+          {{ huecaActual.barrio }} · {{ huecaActual.plato_estrella }}
+        </p>
+      </div>
+
+      <div v-else class="nueva-hueca card">
+        <h3 class="sub-h">Nueva hueca</h3>
+        <div class="field">
+          <label class="field-label" for="nh-nombre">Nombre</label>
+          <input id="nh-nombre" v-model="nuevaHueca.nombre" class="input" type="text" placeholder="Ej: Encebollados Don Pepe" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="nh-ciudad">Ciudad</label>
+          <select id="nh-ciudad" v-model="nuevaHueca.ciudad" class="input">
+            <option v-for="c in CIUDADES" :key="c" :value="c">{{ c }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label" for="nh-desc">Descripción</label>
+          <textarea id="nh-desc" v-model="nuevaHueca.descripcion" class="input" rows="3" placeholder="Una línea sobre el lugar…"></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label">Ubicación</label>
+          <UbicacionPicker v-model="nuevaHueca.coords" height="360px" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 2: Rating -->
+    <section v-show="step === 2" class="wizard-step">
+      <h2 class="wizard-h">2 · Tu veredicto en estrellas</h2>
+      <div class="rating-row">
+        <Estrellas :value="rating" :size="40" :on-change="setRating" />
+        <span class="rating-num">{{ rating || '–' }} / 5</span>
+      </div>
+      <p class="hint">Toca una estrella para fijar la calificación.</p>
+    </section>
+
+    <!-- Step 3: Body -->
+    <section v-show="step === 3" class="wizard-step">
+      <h2 class="wizard-h">3 · La reseña</h2>
+      <div class="field">
+        <label class="field-label" for="titulo">Título</label>
+        <input id="titulo" v-model="titulo" class="input" type="text" placeholder="Ej: El encebollado que silencia la cruda" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="tagline">Tagline</label>
+        <input id="tagline" v-model="tagline" class="input" type="text" placeholder="Una frase gancho" />
+      </div>
+      <div class="field">
+        <label class="field-label">Cuerpo</label>
+        <RichTextEditor v-model="body" :min-height="380" placeholder="Cuenta la experiencia…" />
+      </div>
+      <div class="field">
+        <label class="field-label" for="veredicto">Veredicto</label>
+        <textarea id="veredicto" v-model="veredicto" class="input" rows="4" placeholder="El cierre: ¿vale la pena el viaje?"></textarea>
+      </div>
+    </section>
+
+    <!-- Step 4: Fotos -->
+    <section v-show="step === 4" class="wizard-step">
+      <h2 class="wizard-h">4 · Fotos</h2>
+      <p v-if="initial.photos.length > 0 && photos.length > 0 && !photos.some((p) => p.blob)" class="warn">
+        Las fotos de un borrador no se guardan tras refrescar — vuelve a subirlas antes de publicar.
+      </p>
+      <PhotoUploader
+        :model-value="(photos as Photo[])"
+        v-model:heroId="heroId"
+        @update:model-value="onPhotos"
+      />
+    </section>
+
+    <!-- Nav + actions -->
+    <div class="wizard-actions">
+      <div class="nav-group">
+        <button type="button" class="btn btn--ghost" @click="backToList">← Borradores</button>
+        <button type="button" class="btn btn--blanco" :disabled="step === 1" @click="prev">Anterior</button>
+        <button v-if="step < STEPS.length" type="button" class="btn btn--azul" @click="next">Siguiente</button>
+      </div>
+      <div class="action-group">
+        <span v-if="savedAt" class="saved-note">Guardado {{ savedAt }}</span>
+        <button type="button" class="btn btn--blanco" @click="onGuardar">Guardar borrador</button>
+        <button type="button" class="btn btn--rojo" @click="onPublicar">Publicar</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.wizard-step {
+  border: var(--borde);
+  border-radius: var(--radio-md);
+  background: var(--crema);
+  box-shadow: var(--sombra-bloque-sm);
+  padding: 20px 22px;
+  margin-bottom: 22px;
+}
+.wizard-h {
+  font-family: var(--titulo);
+  font-size: 1.4rem;
+  margin: 0 0 16px;
+}
+.sub-h {
+  font-family: var(--titulo);
+  font-size: 1.1rem;
+  margin: 0 0 12px;
+}
+.mode-switch {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--texto);
+  font-weight: 700;
+  cursor: pointer;
+}
+.radio input { accent-color: var(--rojo); width: 16px; height: 16px; }
+
+.field { margin-bottom: 16px; }
+.field-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  opacity: 0.8;
+}
+.input {
+  width: 100%;
+  font-family: var(--texto);
+  font-size: 15px;
+  padding: 10px 12px;
+  border: var(--borde);
+  border-radius: var(--radio-sm);
+  background: var(--papel);
+  color: var(--tinta);
+}
+.input:focus {
+  outline: none;
+  box-shadow: var(--sombra-bloque-sm);
+}
+textarea.input { resize: vertical; }
+.hint {
+  font-family: var(--mono);
+  font-size: 12px;
+  opacity: 0.7;
+  margin: 4px 0 0;
+}
+.warn {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--rojo);
+  border: var(--borde);
+  border-color: var(--rojo);
+  border-radius: var(--radio-sm);
+  padding: 8px 10px;
+  margin: 0 0 14px;
+}
+.nueva-hueca {
+  padding: 18px;
+}
+.rating-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.rating-num {
+  font-family: var(--display);
+  font-size: 1.4rem;
+}
+
+.wizard-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.nav-group, .action-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.saved-note {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--verde-cebolla);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 720px) {
+  .wizard-actions { flex-direction: column; align-items: stretch; }
+  .nav-group, .action-group { justify-content: space-between; }
+}
+</style>
