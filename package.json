@@ -17,6 +17,7 @@
     "@tiptap/starter-kit": "^3.22.5",
     "@tiptap/vue-3": "^3.22.5",
     "@unhead/vue": "^1.11.13",
+    "blog-component": "github:lordiwa/blog-component",
     "maplibre-gl": "^5.24.0",
     "markdown-it": "^14.1.0",
     "pinia": "^2.3.0",
