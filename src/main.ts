@@ -1,6 +1,9 @@
 import { ViteSSG } from 'vite-ssg'
 import { createPinia } from 'pinia'
 import App from './App.vue'
+// PortableText base styles for reseña/crítico rich text (rendered by
+// blog-component's <BlogPostPreview>). Imported once, globally.
+import 'blog-component/style.css'
 import './styles/main.css'
 
 const routes = [

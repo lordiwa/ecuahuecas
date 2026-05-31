@@ -20,6 +20,14 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // blog-component's bundle imports the Anthropic SDK (default export),
+      // which transitively pulls a Node-only agent toolset that cannot be
+      // browser-bundled. We only use the library's PortableText RENDER surface
+      // (BlogPostPreview), never the server-side AI authoring path, so alias the
+      // SDK to an inert stub for the client/SSG build. See src/lib/anthropic-stub.ts.
+      '@anthropic-ai/sdk': fileURLToPath(
+        new URL('./src/lib/anthropic-stub.ts', import.meta.url),
+      ),
     },
   },
   ssgOptions: {

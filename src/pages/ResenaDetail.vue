@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
+import { useRoute, RouterLink } from 'vue-router'
 import { computed } from 'vue'
 import { useHead } from '@unhead/vue'
-import MarkdownIt from 'markdown-it'
+import { BlogPostPreview } from 'blog-component'
 import { getResena, getHueca, getCritico } from '@/lib/content'
 import Estrellas from '@/components/Estrellas.vue'
 import Foto from '@/components/Foto.vue'
@@ -13,8 +13,8 @@ const resena = computed(() => getResena(slug.value))
 const hueca = computed(() => (resena.value ? getHueca(resena.value.hueca_id) : undefined))
 const critico = computed(() => (resena.value ? getCritico(resena.value.critico_id) : undefined))
 
-const md = new MarkdownIt({ html: false, linkify: true, typographer: true })
-const bodyHtml = computed(() => (resena.value ? md.render(resena.value.body) : ''))
+// PortableText `internalLink` slugs point at other reseñas → /resenas/:slug.
+const resolveInternalHref = (s: string) => `/resenas/${s}`
 
 useHead(() => ({
   title: resena.value ? `${resena.value.titulo} — EcuaHuecas` : 'Reseña no encontrada',
@@ -34,7 +34,15 @@ useHead(() => ({
 
     <Foto :seed="resena.slug" :color="resena.imagen ?? '#E8833A'" aspect="16/9" class="resena-hero" />
 
-    <div class="resena-body cuerpo-editorial" v-html="bodyHtml" />
+    <div class="resena-body cuerpo-editorial">
+      <BlogPostPreview
+        :body="resena.body"
+        project-id="gvc4yjqj"
+        dataset="production"
+        :link-component="RouterLink"
+        :resolve-internal-href="resolveInternalHref"
+      />
+    </div>
 
     <aside v-if="resena.veredicto" class="veredicto">
       <h2 class="h-titulo">Veredicto</h2>
@@ -69,7 +77,32 @@ useHead(() => ({
 .resena-hero { margin: 32px 0; }
 .resena-body { font-size: 1.25rem; line-height: 1.7; }
 .resena-body :deep(p) { margin-block: 1em; }
-.resena-body :deep(h2) { font-family: var(--display); font-size: 1.6rem; margin-top: 2em; }
+.resena-body :deep(h2),
+.resena-body :deep(h3) { font-family: var(--display); margin-top: 2em; }
+.resena-body :deep(h2) { font-size: 1.6rem; }
+.resena-body :deep(h3) { font-size: 1.3rem; }
+
+/*
+ * LIST-STYLE GOTCHA: the global reset nulls <ul>/<ol> markers (list-style:none),
+ * so PortableText bullet/numbered lists render with no markers unless we
+ * re-assert them within the post-body scope. Scoped to .resena-body so other
+ * UI lists (cards, sheets) keep their reset.
+ */
+.resena-body :deep(ul) { list-style: disc outside; padding-left: 1.5em; margin-block: 1em; }
+.resena-body :deep(ol) { list-style: decimal outside; padding-left: 1.5em; margin-block: 1em; }
+.resena-body :deep(li) { margin-block: 0.3em; }
+.resena-body :deep(a) {
+  color: var(--rojo);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+.resena-body :deep(blockquote) {
+  border-left: 4px solid var(--rojo);
+  padding: 0.2rem 0 0.2rem 1rem;
+  margin-block: 1em;
+  font-style: italic;
+}
 
 .veredicto {
   margin-top: 56px;
