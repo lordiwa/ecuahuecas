@@ -5,6 +5,7 @@ import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import { useAuth } from '@/composables/useAuth'
+import { safeNextPath } from '@/lib/safeNext'
 
 useHead({ title: 'Iniciar sesión — EcuaHuecas' })
 
@@ -17,17 +18,8 @@ const email = ref('')
 const password = ref('')
 
 function nextDestination(): string {
-  const next = route.query.next
-  // Only allow same-site absolute paths. Reject protocol-relative ("//evil.com")
-  // and backslash variants to prevent open redirects.
-  if (
-    typeof next === 'string' &&
-    next.startsWith('/') &&
-    !next.startsWith('//') &&
-    !next.startsWith('/\\')
-  )
-    return next
-  return '/'
+  // Shared hardened same-site check (see src/lib/safeNext.ts).
+  return safeNextPath(route.query.next)
 }
 
 // Redirect once authenticated (covers both Google popup and email sign-in).

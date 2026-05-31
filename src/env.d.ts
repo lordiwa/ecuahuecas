@@ -22,3 +22,19 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+// Strongly-type the route `meta` fields the auth gate reads, so the guard in
+// main.ts is type-safe under strict TS.
+import 'vue-router'
+declare module 'vue-router' {
+  interface RouteMeta {
+    /** Page title set by the app. */
+    title?: string
+    /** Requires an authenticated user (auth gate). */
+    admin?: boolean
+    /** Additionally requires the `admin` custom claim (not just any user). */
+    adminOnly?: boolean
+    /** Dev-only playground route (excluded from prod prerender). */
+    dev?: boolean
+  }
+}
