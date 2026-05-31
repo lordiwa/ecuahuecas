@@ -9,6 +9,7 @@ import { huecas } from '@/lib/content'
 import { Ciudad } from '@/types/content'
 import {
   saveDraft,
+  stripPhotoBlobs,
   type ResenaDraft,
   type DraftPhotoInMemory,
 } from '@/lib/drafts'
@@ -37,14 +38,27 @@ const titulo = ref(props.initial.titulo)
 const tagline = ref(props.initial.tagline)
 const body = ref(props.initial.body)
 const veredicto = ref(props.initial.veredicto)
-// PhotoUploader works with Photo[] (which require a blob); seeded draft photos
-// have no blob (lost on refresh), so we keep our own in-memory array.
-const photos = ref<DraftPhotoInMemory[]>([...props.initial.photos])
+// PhotoUploader works with Photo[] (which require a blob). Seeded draft photos
+// reloaded from localStorage have no live blob — their `blob:` URLs are dead and
+// would render as broken thumbnails. Drop those on seed; remember whether the
+// draft *originally* had photos so the "re-upload" banner still fires.
+const hadPersistedPhotos = props.initial.photos.length > 0
+function isLivePhoto(p: DraftPhotoInMemory): boolean {
+  // Keep only photos whose blob is live (or whose URL isn't a dead blob ref).
+  return p.blob != null || !p.url.startsWith('blob:')
+}
+const photos = ref<DraftPhotoInMemory[]>(props.initial.photos.filter(isLivePhoto))
 const heroId = ref<string | null>(props.initial.heroId)
 
 const savedAt = ref<string | null>(null)
 
 const huecaActual = computed(() => huecas.find((h) => h.slug === huecaId.value) ?? null)
+
+// Show the re-upload banner when a reopened draft originally carried photos but
+// none of the current ones have a live blob (i.e. they were dropped on seed).
+const showReuploadWarning = computed(
+  () => hadPersistedPhotos && !photos.value.some((p) => p.blob),
+)
 
 function buildDraft(): ResenaDraft {
   return {
@@ -71,11 +85,10 @@ function onGuardar() {
 }
 
 function onPublicar() {
-  // Placeholder until the publish-to-Firestore ticket. Strip blobs from the
-  // logged payload too so the console stays readable.
-  const draft = buildDraft()
+  // Placeholder until the publish-to-Firestore ticket. Strip photo blobs so the
+  // console shows clean, serializable metadata (sha256 + url) instead of Blobs.
   // eslint-disable-next-line no-console
-  console.log(JSON.stringify(draft, null, 2))
+  console.log(JSON.stringify(stripPhotoBlobs(buildDraft()), null, 2))
 }
 
 function next() {
@@ -200,7 +213,7 @@ function backToList() {
     <!-- Step 4: Fotos -->
     <section v-show="step === 4" class="wizard-step">
       <h2 class="wizard-h">4 · Fotos</h2>
-      <p v-if="initial.photos.length > 0 && photos.length > 0 && !photos.some((p) => p.blob)" class="warn">
+      <p v-if="showReuploadWarning" class="warn">
         Las fotos de un borrador no se guardan tras refrescar — vuelve a subirlas antes de publicar.
       </p>
       <PhotoUploader
