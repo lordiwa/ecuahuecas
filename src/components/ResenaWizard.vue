@@ -5,14 +5,20 @@ import Stepper from '@/components/Stepper.vue'
 import Estrellas from '@/components/Estrellas.vue'
 import UbicacionPicker from '@/components/UbicacionPicker.vue'
 import PhotoUploader, { type Photo } from '@/components/PhotoUploader.vue'
-import { huecas } from '@/lib/content'
+import { huecas, criticos } from '@/lib/content'
 import { Ciudad } from '@/types/content'
 import {
   saveDraft,
-  stripPhotoBlobs,
+  deleteDraft,
   type ResenaDraft,
   type DraftPhotoInMemory,
 } from '@/lib/drafts'
+import {
+  generateResenaDraft,
+  publishResena,
+  buildPublishPhotos,
+  photosToPublishInputs,
+} from '@/lib/publish'
 import { useAuth } from '@/composables/useAuth'
 import { useRole } from '@/composables/useRole'
 
@@ -60,7 +66,28 @@ const heroId = ref<string | null>(props.initial.heroId)
 
 const savedAt = ref<string | null>(null)
 
+// Optional crítico selector — only shown when the snapshot carries críticos.
+// When unset the Cloud Function defaults to the first active crítico.
+const criticoSlug = ref<string>('')
+const hasCriticos = computed(() => criticos.length > 0)
+
+// AI draft generation (step 3) in-flight + error state.
+const generating = ref(false)
+const generateError = ref<string | null>(null)
+
+// Publish in-flight / result / error state.
+const publishing = ref(false)
+const publishError = ref<string | null>(null)
+const publishedSlug = ref<string | null>(null)
+
 const huecaActual = computed(() => huecas.find((h) => h.slug === huecaId.value) ?? null)
+
+const huecaNombreActual = computed(() =>
+  huecaMode.value === 'nueva' ? nuevaHueca.nombre : (huecaActual.value?.nombre ?? ''),
+)
+const ciudadActual = computed(() =>
+  huecaMode.value === 'nueva' ? nuevaHueca.ciudad : (huecaActual.value?.ciudad ?? ''),
+)
 
 // Show the re-upload banner when a reopened draft originally carried photos but
 // none of the current ones have a live blob (i.e. they were dropped on seed).
@@ -92,11 +119,74 @@ function onGuardar() {
   savedAt.value = new Date().toLocaleTimeString()
 }
 
-function onPublicar() {
-  // Placeholder until the publish-to-Firestore ticket. Strip photo blobs so the
-  // console shows clean, serializable metadata (sha256 + url) instead of Blobs.
-  // eslint-disable-next-line no-console
-  console.log(JSON.stringify(stripPhotoBlobs(buildDraft()), null, 2))
+async function onGenerar() {
+  if (generating.value) return
+  if (!huecaNombreActual.value) {
+    generateError.value = 'Elige o nombra la hueca antes de generar.'
+    return
+  }
+  // Don't clobber existing prose without an explicit confirm.
+  if (body.value.trim().length > 0) {
+    const ok = window.confirm('Ya escribiste algo en el cuerpo. ¿Reemplazarlo con la versión de la IA?')
+    if (!ok) return
+  }
+  generating.value = true
+  generateError.value = null
+  try {
+    const out = await generateResenaDraft({
+      huecaNombre: huecaNombreActual.value,
+      ciudad: String(ciudadActual.value || ''),
+      rating: rating.value,
+      notas: veredicto.value,
+      tagline: tagline.value,
+    })
+    titulo.value = out.titulo || titulo.value
+    body.value = out.bodyMarkdown || body.value
+    if (out.extracto) tagline.value = out.extracto
+  } catch (err) {
+    generateError.value = err instanceof Error ? err.message : 'No se pudo generar la reseña.'
+  } finally {
+    generating.value = false
+  }
+}
+
+async function onPublicar() {
+  if (publishing.value) return
+  publishing.value = true
+  publishError.value = null
+  publishedSlug.value = null
+  try {
+    const photoInputs = await photosToPublishInputs(photos.value)
+    const payloadPhotos = buildPublishPhotos(photoInputs, heroId.value)
+    const result = await publishResena({
+      huecaMode: huecaMode.value,
+      huecaId: huecaMode.value === 'existente' ? huecaId.value : null,
+      nombre: nuevaHueca.nombre,
+      ciudad: nuevaHueca.ciudad,
+      descripcion: nuevaHueca.descripcion,
+      coords: nuevaHueca.coords,
+      rating: rating.value,
+      titulo: titulo.value,
+      tagline: tagline.value,
+      body: body.value,
+      veredicto: veredicto.value,
+      heroId: heroId.value,
+      photos: payloadPhotos,
+      criticoSlug: criticoSlug.value || undefined,
+    })
+    // Success: drop the local draft and surface a link to the published reseña.
+    deleteDraft(id)
+    publishedSlug.value = result.slug
+  } catch (err) {
+    publishError.value = err instanceof Error ? err.message : 'No se pudo publicar la reseña.'
+  } finally {
+    publishing.value = false
+  }
+}
+
+function verResena() {
+  if (!publishedSlug.value) return
+  router.push({ name: 'resena', params: { slug: publishedSlug.value } })
 }
 
 function next() {
@@ -200,6 +290,15 @@ function backToList() {
     <!-- Step 3: Body -->
     <section v-show="step === 3" class="wizard-step">
       <h2 class="wizard-h">3 · La reseña</h2>
+
+      <div v-if="isCritico" class="ai-row">
+        <button type="button" class="btn btn--azul" :disabled="generating" @click="onGenerar">
+          {{ generating ? 'Generando…' : '✨ Generar con IA' }}
+        </button>
+        <span class="hint">Usa tus notas del veredicto y la calificación.</span>
+      </div>
+      <p v-if="generateError" class="warn">{{ generateError }}</p>
+
       <div class="field">
         <label class="field-label" for="titulo">Título</label>
         <input id="titulo" v-model="titulo" class="input" type="text" placeholder="Ej: El encebollado que silencia la cruda" />
@@ -229,7 +328,23 @@ function backToList() {
         v-model:heroId="heroId"
         @update:model-value="onPhotos"
       />
+
+      <div v-if="hasCriticos && isCritico" class="field critico-field">
+        <label class="field-label" for="critico-select">Crítico (opcional)</label>
+        <select id="critico-select" v-model="criticoSlug" class="input">
+          <option value="">Por defecto (primer crítico activo)</option>
+          <option v-for="c in criticos" :key="c.slug" :value="c.slug">{{ c.nombre }}</option>
+        </select>
+      </div>
     </section>
+
+    <!-- Publish feedback -->
+    <div v-if="publishedSlug" class="publish-ok">
+      <span>✓ Reseña publicada.</span>
+      <button type="button" class="btn btn--blanco" @click="verResena">Ver reseña →</button>
+      <button type="button" class="btn btn--ghost" @click="backToList">Volver a borradores</button>
+    </div>
+    <p v-if="publishError" class="warn">{{ publishError }}</p>
 
     <!-- Nav + actions -->
     <div class="wizard-actions">
@@ -248,9 +363,10 @@ function backToList() {
             v-if="isCritico"
             type="button"
             class="btn btn--rojo"
+            :disabled="publishing"
             @click="onPublicar"
           >
-            Publicar
+            {{ publishing ? 'Publicando…' : 'Publicar' }}
           </button>
         </template>
         <span v-else class="auth-hint">
@@ -376,6 +492,29 @@ textarea.input { resize: vertical; }
   opacity: 0.8;
 }
 .auth-hint a { color: var(--rojo); font-weight: 700; }
+
+.ai-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.critico-field { margin-top: 18px; }
+.publish-ok {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-family: var(--texto);
+  font-weight: 700;
+  color: var(--verde-cebolla);
+  border: var(--borde);
+  border-color: var(--verde-cebolla);
+  border-radius: var(--radio-sm);
+  padding: 10px 12px;
+  margin-bottom: 16px;
+}
 
 @media (max-width: 720px) {
   .wizard-actions { flex-direction: column; align-items: stretch; }

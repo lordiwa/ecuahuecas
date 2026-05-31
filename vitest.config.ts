@@ -9,6 +9,9 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    include: ['src/**/*.test.ts'],
+    // Client unit tests live under src/; the Cloud Functions' PURE modules carry
+    // co-located specs under functions/ that import the ESM module directly (no
+    // firebase/anthropic/sanity SDKs are pulled in).
+    include: ['src/**/*.test.ts', 'functions/**/*.test.ts'],
   },
 })

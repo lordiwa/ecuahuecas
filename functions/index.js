@@ -34,6 +34,11 @@ import { getAuth } from 'firebase-admin/auth'
 
 initializeApp()
 
+// Publishing callables (Claude draft + Sanity publish). Kept in their own module
+// to keep this file readable; re-exported here so the Functions deploy picks
+// them up. See publishResena.js for the GEN2 CALLABLE GOTCHA notes.
+export { generateResenaDraft, publishResena } from './publishResena.js'
+
 // Read at deploy/runtime; never hardcoded. See header for how to set it.
 const ADMIN_EMAIL = defineString('ADMIN_EMAIL')
 
