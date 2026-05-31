@@ -30,7 +30,11 @@ export default defineConfig({
       const huecas = listSlugs('src/content/huecas').map((s) => `/huecas/${s}`)
       const resenas = listSlugs('src/content/resenas').map((s) => `/resenas/${s}`)
       const criticos = listSlugs('src/content/criticos').map((s) => `/criticos/${s}`)
-      const staticPaths = paths.filter((p) => !p.includes(':') && !p.startsWith('/_dev'))
+      // Exclude /_dev playgrounds and /admin (meta.admin) routes from the prod
+      // SSG crawl: they are client-only and must not be emitted as static HTML.
+      const staticPaths = paths.filter(
+        (p) => !p.includes(':') && !p.startsWith('/_dev') && !p.startsWith('/admin'),
+      )
       return [...new Set([...staticPaths, ...huecas, ...resenas, ...criticos])]
     },
   },
