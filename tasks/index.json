@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-31T05:14:04.209Z",
+  "generated_at": "2026-05-31T15:36:38.285Z",
   "tasks": [
     {
       "key": "TASK-006",
@@ -76,8 +76,14 @@
     {
       "key": "TASK-018",
       "title": "Fase 02 A.x — Render público de reseñas (PortableText) + snapshot SSG desde Sanity",
-      "status": "todo",
+      "status": "done",
       "priority": "medium"
+    },
+    {
+      "key": "TASK-019",
+      "title": "Fase 02 — Deuda técnica post-migración Sanity (tests del snapshot/render + limpieza seed markdown)",
+      "status": "todo",
+      "priority": "low"
     }
   ]
 }

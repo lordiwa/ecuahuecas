@@ -1,0 +1,30 @@
+{
+  "key": "TASK-019",
+  "title": "Fase 02 — Deuda técnica post-migración Sanity (tests del snapshot/render + limpieza seed markdown)",
+  "description": "Follow-up del review de TASK-018 (hallazgos MEDIUM/LOW, no bloqueantes). (1) Tests para la nueva capa de datos/render: helpers de content.ts devuelven datos del snapshot, getResena().body es BlockContent no vacío, y un smoke test de render de ResenaDetail con PortableText. Evitar fragilidad en CI: usar un fixture de snapshot pequeño commiteado (no el src/content-snapshot.json real, que es gitignored y requiere token), inyectándolo o vía mock. (2) Una vez que vite.config.ts deriva los slugs de prerender del snapshot (fix aplicado en TASK-018), eliminar el seed markdown obsoleto src/content/**/*.md y cualquier código muerto asociado (p.ej. el cliente tokenless src/lib/sanity.ts si sigue sin usarse). (3) Decidir con producto si critico.reviews debe omitirse en vez de hardcodear 0 en el snapshot. (4) Opcional: filtrar los nombres de claves que snapshot-sanity.mjs loguea, para no exponer SANITY_WRITE_TOKEN/ANTHROPIC_API_KEY como nombres en logs de CI.",
+  "acceptance_criteria": [
+    "Tests cubren content.ts (datos del snapshot) y el render PortableText de ResenaDetail, sin depender del snapshot real ni de un token (fixture/mocks)",
+    "vite.config.ts deriva slugs del snapshot; src/content/**/*.md eliminado sin romper el prerender (build verde, páginas de detalle prerenderizadas)",
+    "Código muerto post-migración eliminado o justificado (p.ej. src/lib/sanity.ts)",
+    "Decisión documentada sobre critico.reviews (omitir vs 0)",
+    "snapshot-sanity.mjs no lista nombres de claves sensibles en sus logs"
+  ],
+  "status": "todo",
+  "priority": "low",
+  "labels": [
+    "phase-02",
+    "sanity",
+    "tech-debt",
+    "tests"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-018"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-05-31T15:34:41.112Z",
+  "updated_at": "2026-05-31T15:34:41.112Z",
+  "jira_key": null
+}
