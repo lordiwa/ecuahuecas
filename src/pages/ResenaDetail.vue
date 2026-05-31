@@ -83,10 +83,12 @@ useHead(() => ({
 .resena-body :deep(h3) { font-size: 1.3rem; }
 
 /*
- * LIST-STYLE GOTCHA: the global reset nulls <ul>/<ol> markers (list-style:none),
- * so PortableText bullet/numbered lists render with no markers unless we
- * re-assert them within the post-body scope. Scoped to .resena-body so other
- * UI lists (cards, sheets) keep their reset.
+ * LIST-STYLE GOTCHA: the global reset (`* { margin: 0; padding: 0 }` in
+ * src/styles/main.css) zeroes the padding that <ul>/<ol> use as their marker
+ * gutter, so bullets/numbers render off-canvas (effectively invisible) on
+ * PortableText lists. Re-assert both list-style AND the padding gutter within
+ * the post-body scope. Scoped to .resena-body so other UI lists (cards, sheets)
+ * keep their reset.
  */
 .resena-body :deep(ul) { list-style: disc outside; padding-left: 1.5em; margin-block: 1em; }
 .resena-body :deep(ol) { list-style: decimal outside; padding-left: 1.5em; margin-block: 1em; }
