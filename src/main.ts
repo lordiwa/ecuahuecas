@@ -41,6 +41,24 @@ const routes = [
     component: () => import('./pages/mapa.vue'),
   },
   {
+    path: '/admin/resenas',
+    name: 'admin-resenas',
+    component: () => import('./pages/admin/resenas/index.vue'),
+    meta: { title: 'EcuaHuecas — Admin: Borradores', admin: true },
+  },
+  {
+    path: '/admin/resenas/nueva',
+    name: 'admin-resena-nueva',
+    component: () => import('./pages/admin/resenas/nueva.vue'),
+    meta: { title: 'EcuaHuecas — Admin: Nueva reseña', admin: true },
+  },
+  {
+    path: '/admin/resenas/:id/editar',
+    name: 'admin-resena-editar',
+    component: () => import('./pages/admin/resenas/editar.vue'),
+    meta: { title: 'EcuaHuecas — Admin: Editar reseña', admin: true },
+  },
+  {
     path: '/_dev/editor',
     name: 'dev-editor',
     component: () => import('./pages/_dev/editor.vue'),

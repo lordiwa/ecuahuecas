@@ -3,6 +3,14 @@ import { ref, watchEffect } from 'vue'
 
 const theme = ref<'light' | 'dark'>('light')
 
+// Expose the admin link only in dev, or when ?admin=true is present — so it is
+// never statically rendered into production by accident. Guard `location` for
+// the SSG build (no `window` during module evaluation).
+const showAdmin =
+  import.meta.env.DEV ||
+  (typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).has('admin'))
+
 watchEffect(() => {
   if (typeof document !== 'undefined') {
     document.documentElement.dataset.theme = theme.value
@@ -30,6 +38,7 @@ function toggleTheme() {
       <RouterLink to="/mapa">Mapa</RouterLink>
       <RouterLink to="/top10">Top 10</RouterLink>
       <RouterLink to="/buscar">Buscar</RouterLink>
+      <RouterLink v-if="showAdmin" to="/admin/resenas" class="admin-link">Admin</RouterLink>
       <button class="btn btn--ghost" @click="toggleTheme" :aria-label="`Cambiar a tema ${theme === 'light' ? 'oscuro' : 'claro'}`">
         {{ theme === 'light' ? 'Oscuro' : 'Claro' }}
       </button>
@@ -97,6 +106,10 @@ function toggleTheme() {
 }
 .app-nav a.router-link-active {
   color: var(--rojo);
+}
+.app-nav a.admin-link {
+  color: var(--azul);
+  border-bottom: 2.5px solid var(--azul);
 }
 
 .app-main {
