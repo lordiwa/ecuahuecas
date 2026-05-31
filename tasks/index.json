@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-31T16:39:56.823Z",
+  "generated_at": "2026-05-31T18:19:25.379Z",
   "tasks": [
     {
       "key": "TASK-006",
@@ -46,7 +46,7 @@
     {
       "key": "TASK-013",
       "title": "Fase 02 A.7 — Persistencia Sanity vía Cloud Function (publicar reseñas + IA + imágenes)",
-      "status": "todo",
+      "status": "in_progress",
       "priority": "medium"
     },
     {

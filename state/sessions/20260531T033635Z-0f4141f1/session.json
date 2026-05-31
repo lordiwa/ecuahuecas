@@ -2,14 +2,29 @@
   "schema_version": 2,
   "session_id": "20260531T033635Z-0f4141f1",
   "lifecycle_state": "active",
-  "updated_at": "2026-05-31T03:36:35.555Z",
-  "active_task": null,
-  "workflow_step": "idle",
-  "next_action": null,
-  "handoff_summary": "session started",
+  "updated_at": "2026-05-31T18:20:00.000Z",
+  "active_task": "TASK-013",
+  "workflow_step": "execute",
+  "next_action": "Implement TASK-013 (Fase 02 A.7): a Firebase Cloud Function (e.g. publishResena) that takes the wizard draft, optionally generates the reseña body with Claude (generatePostBody pattern), uploads photos to Sanity image assets, and writes hueca/resena docs to Sanity gvc4yjqj/production. Integrate it into the /admin wizard (ResenaWizard.vue 'Publicar' currently only console.logs the draft via stripPhotoBlobs). Only authenticated críticos/admins may invoke it. Also upgrade functions to Node 22 (Node 20 deprecates 2026-10-30). Read tasks/TASK-013.json for full acceptance criteria. Run the orchestrator flow: delegate to the developer, then an independent reviewer, then mark done + commit.",
   "open_questions": [],
   "blockers": [],
-  "decisions": [],
-  "subagent_results": [],
-  "pending_human_confirmation": null
+  "pending_human_confirmation": null,
+  "decisions": [
+    "Migrated from GSD (.planning/, archived with _ARCHIVED.md) to the agentic-framework. tasks/ + state/ + PROJECT.md are the source of truth; GSD hooks disabled in .claude/settings.json.",
+    "Content backend = Sanity.io (NOT Firestore). Reuse the blog-component library (installed as dep github:lordiwa/blog-component) and its Sanity project: projectId 'gvc4yjqj', dataset 'production' (public). Public read config (VITE_SANITY_*) is in .env.local.",
+    "Domain model: added separate Sanity doc types hueca/critico/resena (studio/schemaTypes/), reusing blockContent (PortableText). Markdown seed migrated (2 huecas, 2 criticos, 1 resena) via scripts/seed-sanity.mjs.",
+    "CRITICAL Sanity quirk: anonymous reads of gvc4yjqj/production return 0 for the API-written hueca/critico/resena docs (post/author show fine). They ARE published (verified with token). So the build-time SSG snapshot (scripts/snapshot-sanity.mjs) reads WITH a token; the tokenless src/lib/sanity.ts would return empty. Readers get static HTML (zero-JS); no runtime Sanity reads.",
+    "Firebase Auth (Google + Email/Password) live on project 'ecuahuecas' (separate Google account rmatovelle84@gmail.com; Blaze enabled). firebase.ts is lazy/SSG-safe. Gate in main.ts protects /admin/** (and /admin/usuarios admin-only); useRole reads custom claims.",
+    "4 Cloud Functions deployed in us-central1: bootstrapAdmin, grantCriticoRole, revokeCriticoRole, listCriticos. They fail closed (caller must be admin). ADMIN_EMAIL=rmatovelle84@gmail.com (admin granted via dev-only window.hacermeAdmin()).",
+    "GEN2 CALLABLE GOTCHA: Firebase Functions v2 callables must have allUsers as Cloud Run run.invoker or the browser gets a CORS/403 (preflight rejected). The CLI sets this on a clean CREATE but NOT on an update after a failed build. After deploying a new callable, verify with: curl -s -o /dev/null -w '%{http_code}' -X POST <url> -d '{\"data\":{}}' — expect 401 (public, reachable), not 403 (private). Fix a 403 by deleting + recreating the function fresh.",
+    "Secrets for the A.7 Cloud Function are already in functions/.env (gitignored, NEVER commit): SANITY_WRITE_TOKEN (Administrator scope), ANTHROPIC_API_KEY, ANTHROPIC_MODEL=claude-haiku-4-5-20251001, ADMIN_EMAIL. Reused from blog-component/.env per user approval.",
+    "DESIGN NOTE for TASK-013: blog-component's barrel export pulls in Vue SFCs, so a pure-Node Cloud Function likely should NOT import the whole lib bundle. Prefer using @anthropic-ai/sdk + @sanity/client directly in the function (mirroring blog-component's generatePostBody forced-tool-call pattern and its image/write-adapter shape), or import only framework-agnostic pieces if cleanly resolvable.",
+    "Git: all work committed on main (branch is ahead of origin; never pushed by the agent). settings.local.json is intentionally left uncommitted. Repo uses LF→CRLF (warnings are benign)."
+  ],
+  "subagent_results": [
+    "Completed & committed on main: TASK-006..009 (phase-01 + A.1-A.3, pre-existing), TASK-010 (wizard + drafts), TASK-016 (install blog-component + Sanity read client), TASK-017 (Sanity schemas + seed migration), TASK-018 (PortableText render + SSG snapshot), TASK-011 (Firebase Auth client + bootstrapAdmin), TASK-012 (auth gate + roles + admin functions). All passed independent review.",
+    "Open follow-up: TASK-019 (low, tech debt) — tests for snapshot/render layer, delete obsolete src/content/*.md seed (vite.config already derives slugs from the snapshot), critico.reviews decision, snapshot-sanity.mjs log hygiene, and the Node 20->22 functions runtime upgrade.",
+    "Remaining after TASK-013: TASK-014 (phase-03 assets), TASK-015 (phase-04 Firebase Hosting deploy + GitHub Actions; needs SANITY_READ_TOKEN secret in CI).",
+    "Dev server: run `npm run dev` (port 5173). Build: `npm run build` (runs snapshot then vite-ssg; needs a Sanity token via blog-component/.env locally). Tests: `npm test` (25 passing). Typecheck: `npm run typecheck`."
+  ]
 }
