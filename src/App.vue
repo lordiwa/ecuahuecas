@@ -1,7 +1,44 @@
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue'
+import { ref, computed, watchEffect, onMounted, onBeforeUnmount } from 'vue'
+import { useAuth } from '@/composables/useAuth'
 
 const theme = ref<'light' | 'dark'>('light')
+
+const { currentUser, initAuthListener, signOut } = useAuth()
+
+// Register the auth listener only in the browser (never during SSG prerender).
+onMounted(() => {
+  if (typeof window !== 'undefined') initAuthListener()
+})
+
+const menuOpen = ref(false)
+
+const userInitial = computed(() => {
+  const u = currentUser.value
+  const source = u?.displayName || u?.email || '?'
+  return source.trim().charAt(0).toUpperCase() || '?'
+})
+
+function closeMenu() {
+  menuOpen.value = false
+}
+
+async function onSignOut() {
+  closeMenu()
+  await signOut()
+}
+
+function onDocClick(e: MouseEvent) {
+  const target = e.target as HTMLElement | null
+  if (target && !target.closest('.user-menu')) closeMenu()
+}
+
+onMounted(() => {
+  if (typeof document !== 'undefined') document.addEventListener('click', onDocClick)
+})
+onBeforeUnmount(() => {
+  if (typeof document !== 'undefined') document.removeEventListener('click', onDocClick)
+})
 
 // Expose the admin link only in dev, or when ?admin=true is present — so it is
 // never statically rendered into production by accident. Guard `location` for
@@ -42,6 +79,38 @@ function toggleTheme() {
       <button class="btn btn--ghost" @click="toggleTheme" :aria-label="`Cambiar a tema ${theme === 'light' ? 'oscuro' : 'claro'}`">
         {{ theme === 'light' ? 'Oscuro' : 'Claro' }}
       </button>
+
+      <RouterLink v-if="!currentUser" to="/login" class="login-link">Entrar</RouterLink>
+
+      <div v-else class="user-menu">
+        <button
+          class="user-avatar"
+          type="button"
+          :aria-expanded="menuOpen"
+          aria-haspopup="menu"
+          aria-label="Menú de usuario"
+          @click="menuOpen = !menuOpen"
+        >
+          <img
+            v-if="currentUser.photoURL"
+            :src="currentUser.photoURL"
+            width="34"
+            height="34"
+            alt=""
+            referrerpolicy="no-referrer"
+          />
+          <span v-else class="user-initial">{{ userInitial }}</span>
+        </button>
+        <div v-if="menuOpen" class="user-dropdown" role="menu">
+          <span class="user-dropdown__email">{{ currentUser.email }}</span>
+          <button type="button" role="menuitem" class="user-dropdown__item" disabled>
+            Mi perfil
+          </button>
+          <button type="button" role="menuitem" class="user-dropdown__item" @click="onSignOut">
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
     </nav>
   </header>
 
@@ -110,6 +179,82 @@ function toggleTheme() {
 .app-nav a.admin-link {
   color: var(--azul);
   border-bottom: 2.5px solid var(--azul);
+}
+
+.login-link {
+  color: var(--rojo) !important;
+}
+
+.user-menu {
+  position: relative;
+}
+.user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: var(--borde);
+  border-radius: var(--radio-sm);
+  background: var(--amarillo);
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: var(--sombra-bloque-sm);
+}
+.user-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.user-initial {
+  font-family: var(--display);
+  font-size: 16px;
+  color: var(--tinta);
+}
+.user-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  background: var(--crema);
+  border: var(--borde);
+  border-radius: var(--radio-sm);
+  box-shadow: var(--sombra-bloque);
+  overflow: hidden;
+  z-index: 200;
+}
+.user-dropdown__email {
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--tinta);
+  opacity: 0.7;
+  border-bottom: var(--borde);
+  word-break: break-all;
+}
+.user-dropdown__item {
+  text-align: left;
+  padding: 12px 14px;
+  font-family: var(--texto);
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background: transparent;
+  border: none;
+  color: var(--tinta);
+  cursor: pointer;
+}
+.user-dropdown__item:hover:not(:disabled) {
+  background: var(--amarillo-suave);
+}
+.user-dropdown__item:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .app-main {

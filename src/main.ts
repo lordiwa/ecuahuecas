@@ -44,6 +44,12 @@ const routes = [
     component: () => import('./pages/mapa.vue'),
   },
   {
+    path: '/login',
+    name: 'login',
+    component: () => import('./pages/login.vue'),
+    meta: { title: 'EcuaHuecas — Iniciar sesión' },
+  },
+  {
     path: '/admin/resenas',
     name: 'admin-resenas',
     component: () => import('./pages/admin/resenas/index.vue'),
