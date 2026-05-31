@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite-ssg build",
     "preview": "vite preview",
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@tiptap/extension-link": "^3.22.5",
@@ -30,10 +31,12 @@
     "@types/node": "^22.10.1",
     "@vitejs/plugin-vue": "^5.2.1",
     "get-shit-done-cc": "^1.40.0",
+    "jsdom": "^29.1.1",
     "typescript": "^5.7.2",
     "vite": "^6.0.3",
     "vite-imagetools": "^7.0.5",
     "vite-ssg": "^28.0.0",
+    "vitest": "^4.1.7",
     "vue-tsc": "^2.1.10"
   }
 }
