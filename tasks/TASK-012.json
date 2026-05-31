@@ -1,0 +1,38 @@
+{
+  "key": "TASK-012",
+  "title": "Fase 02 A.6 — Gate de auth + roles + admin de usuarios",
+  "description": "Activar el gate de autenticación y los roles. Router guard: /admin/** requiere auth (redirect a /login?next=...), /admin/usuarios requiere claim admin. src/composables/useRole.ts ({isAdmin, isCritico, claims} vía getIdTokenResult). En el wizard de A.4, Publicar solo visible si critico||admin. Página /admin/usuarios (solo admin) con lista de usuarios y promover/revocar crítico. Cloud Functions grantCriticoRole y revokeCriticoRole (callable, verifican claim admin del caller). Migrado desde GSD (decisiones D6, D8).",
+  "acceptance_criteria": [
+    "Router guard protege /admin/** (redirect a /login?next=) y /admin/usuarios exige claim admin",
+    "useRole.ts expone isAdmin/isCritico/claims desde custom claims",
+    "Wizard A.4: Publicar visible solo para critico o admin; Guardar borrador para cualquier autenticado",
+    "/admin/usuarios lista usuarios y permite promover/revocar crítico (solo admin)",
+    "Cloud Functions grantCriticoRole y revokeCriticoRole verifican claim admin del caller",
+    "Verificado: anónimo redirigido a login; admin promueve crítico; crítico ve Publicar"
+  ],
+  "status": "todo",
+  "priority": "medium",
+  "labels": [
+    "migrated-from-gsd",
+    "phase-02",
+    "andamio",
+    "firebase",
+    "auth"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-011"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-05-31T04:12:25.387Z",
+      "body": "Nota traída del review de TASK-010 (A.4): las rutas /admin/** existen sin gate de auth (intencional para A.4). En A.6, además del router guard, asegurar que las páginas /admin no queden expuestas: ya se excluyeron del crawling de vite-ssg para que no se pre-rendericen como HTML estático en prod, pero el bundle JS de las rutas sí se sirve — el gate de auth + claim debe proteger el acceso real. Verificar que un anónimo que navegue directo a /admin/resenas sea redirigido a /login?next=."
+    }
+  ],
+  "created_at": "2026-05-31T03:41:04.073Z",
+  "updated_at": "2026-05-31T04:12:25.387Z",
+  "jira_key": null
+}

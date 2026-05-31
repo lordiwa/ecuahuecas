@@ -1,0 +1,27 @@
+{
+  "key": "TASK-007",
+  "title": "Fase 02 A.1 — Editor WYSIWYG con TipTap (output markdown)",
+  "description": "Editor de texto enriquecido para reseñas usando TipTap (Vue 3 nativo, MIT, headless) con la extensión tiptap-markdown para emitir markdown crudo — consistente con el seed actual en src/content y con la futura migración a Firestore. Componente src/components/RichTextEditor.vue. Migrado desde GSD (.planning/phases/02-andamio, decisión D1). Estado: COMPLETADO (commit 9175e75).",
+  "acceptance_criteria": [
+    "Deps instaladas: @tiptap/vue-3, @tiptap/starter-kit, @tiptap/extension-link, tiptap-markdown",
+    "RichTextEditor.vue funcional con starter kit + link + blockquote + separador",
+    "Output en markdown crudo vía tiptap-markdown",
+    "Lazy import en /admin/** para acotar bundle size"
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "migrated-from-gsd",
+    "phase-02",
+    "andamio",
+    "frontend"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-05-31T03:40:09.572Z",
+  "updated_at": "2026-05-31T03:44:35.273Z",
+  "jira_key": null
+}

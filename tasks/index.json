@@ -1,0 +1,65 @@
+{
+  "generated_at": "2026-05-31T04:15:51.050Z",
+  "tasks": [
+    {
+      "key": "TASK-006",
+      "title": "Fase 01 — Scaffold Vue 3 + Vite + vite-ssg con contenido en markdown",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-007",
+      "title": "Fase 02 A.1 — Editor WYSIWYG con TipTap (output markdown)",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-008",
+      "title": "Fase 02 A.2 — PhotoUploader con compresión WebP client-side",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-009",
+      "title": "Fase 02 A.3 — Mapa real con MapLibre GL + UbicacionPicker",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-010",
+      "title": "Fase 02 A.4 — Wizard /admin/resenas/nueva con drafts en localStorage",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-011",
+      "title": "Fase 02 A.5 — Firebase Auth (login funcional, sin gate aún)",
+      "status": "todo",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-012",
+      "title": "Fase 02 A.6 — Gate de auth + roles + admin de usuarios",
+      "status": "todo",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-013",
+      "title": "Fase 02 A.7 — Persistencia Firestore + Storage (cierre del andamio)",
+      "status": "todo",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-014",
+      "title": "Fase 03 — Optimización de assets (gallinazo + favicons + OG images dinámicos)",
+      "status": "todo",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-015",
+      "title": "Fase 04 — Firebase Hosting deploy + GitHub Actions (cron de rebuild)",
+      "status": "todo",
+      "priority": "medium"
+    }
+  ]
+}

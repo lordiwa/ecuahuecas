@@ -1,0 +1,28 @@
+{
+  "key": "TASK-014",
+  "title": "Fase 03 — Optimización de assets (gallinazo + favicons + OG images dinámicos)",
+  "description": "Optimización de assets visuales antes del deploy. Mascota gallinazo (solo logo y favicon, por restricción de marca), set completo de favicons, y generación de OG images dinámicos para previews sociales (clave dado el enfoque SSG-first). Bloqueante para deploy. Migrado desde GSD (.planning/ROADMAP fase 03).",
+  "acceptance_criteria": [
+    "Logo y favicon del gallinazo optimizados (uso restringido a logo/favicon por marca)",
+    "Set de favicons completo (multi-tamaño + apple-touch + manifest)",
+    "OG images dinámicos por página/reseña para previews sociales",
+    "Assets servidos optimizados (formato/compresión) sin romper el SSG"
+  ],
+  "status": "todo",
+  "priority": "medium",
+  "labels": [
+    "migrated-from-gsd",
+    "phase-03",
+    "assets"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-013"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-05-31T03:41:26.240Z",
+  "updated_at": "2026-05-31T03:41:26.240Z",
+  "jira_key": null
+}

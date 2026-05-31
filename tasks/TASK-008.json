@@ -1,0 +1,28 @@
+{
+  "key": "TASK-008",
+  "title": "Fase 02 A.2 — PhotoUploader con compresión WebP client-side",
+  "description": "Componente src/components/PhotoUploader.vue con drag & drop + click-to-select. Compresión client-side a WebP vía canvas API: resize a max 1920px lado largo, max 2MB por archivo, max 8 fotos por reseña, hash SHA-256 para deduplicación dentro del draft. Migrado desde GSD (.planning/phases/02-andamio, decisión D4). Estado: COMPLETADO (commit 6800a1b). Nota: validar WebP en canvas en Mobile Safari.",
+  "acceptance_criteria": [
+    "PhotoUploader.vue con drag & drop y click-to-select",
+    "Compresión a WebP vía canvas (max 1920px lado largo)",
+    "Límites aplicados: max 2MB/archivo, max 8 fotos/reseña",
+    "Hash SHA-256 por archivo para dedupe en el draft",
+    "Validado en Mobile Safari (WebP en canvas)"
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "migrated-from-gsd",
+    "phase-02",
+    "andamio",
+    "frontend"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-05-31T03:40:17.418Z",
+  "updated_at": "2026-05-31T03:44:36.046Z",
+  "jira_key": null
+}

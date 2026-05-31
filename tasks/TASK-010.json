@@ -1,0 +1,40 @@
+{
+  "key": "TASK-010",
+  "title": "Fase 02 A.4 — Wizard /admin/resenas/nueva con drafts en localStorage",
+  "description": "Wizard de creación de reseñas de 4 pasos (Hueca → Rating → Body → Fotos) en /admin/resenas/nueva, accesible sin gate de auth todavía. Drafts persistidos en localStorage (key draft:resena:<slug-temporal>); las fotos en draft son blob URLs en memoria (no persisten al refrescar — limitación documentada en la UI). Páginas: nueva.vue, index.vue (lista de drafts), [id]/editar.vue. Botón Publicar = placeholder console.log hasta A.7. Checkpoint mayor de dogfooding de UX tras esta sub-fase, antes de cablear Firebase. Migrado desde GSD (decisión D3).",
+  "acceptance_criteria": [
+    "Wizard de 4 pasos con Stepper: Hueca (dropdown + crear inline con UbicacionPicker), Rating (Estrellas input), Body (titulo+tagline+RichTextEditor+veredicto), Fotos (PhotoUploader con hero)",
+    "Guardar borrador escribe a localStorage (state + metadata de fotos sha256+webpUrl)",
+    "index.vue lista drafts con Continuar editando / Descartar (con confirm)",
+    "[id]/editar.vue reabre el wizard pre-rellenado desde localStorage",
+    "Botón Publicar hace console.log del draft (placeholder hasta A.7)",
+    "Link a /admin/resenas visible solo en DEV o con flag ?admin=true",
+    "Flujo completo verificado: crear → refresh → continuar recupera todo excepto fotos → responsive mobile"
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "migrated-from-gsd",
+    "phase-02",
+    "andamio",
+    "frontend"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-007",
+    "TASK-008",
+    "TASK-009"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-05-31T04:12:25.523Z",
+      "body": "Flujo del orquestador ejecutado: developer implementó (drafts.ts + Vitest 7/7, Stepper, ResenaWizard compartido por nueva/editar, rutas admin, link condicional en header). Reviewer independiente: PASS (sin HIGH); typecheck limpio, build SSG verde, link Admin ausente de dist/*.html. Aplicando 3 follow-ups (onPublicar strip blobs; placeholder de fotos con blob muerto al reabrir; excluir /admin del crawling SSG) antes de cerrar."
+    }
+  ],
+  "created_at": "2026-05-31T03:40:38.937Z",
+  "updated_at": "2026-05-31T04:15:51.050Z",
+  "jira_key": null
+}

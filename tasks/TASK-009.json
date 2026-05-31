@@ -1,0 +1,27 @@
+{
+  "key": "TASK-009",
+  "title": "Fase 02 A.3 — Mapa real con MapLibre GL + UbicacionPicker",
+  "description": "Mapa con MapLibre GL JS + tiles MapTiler free tier (rechazados Mapbox y Google Maps por costo/estética). Style JSON custom respetando paleta (papel/amarillo de fondo, líneas negras, agua azul bandera), pin SVG custom (rojo bandera + sombra dura 6px) clickeable con popup. UbicacionPicker: el admin clickea el mapa o pega lat/lng para fijar coordenada (sin geocoding API). Migrado desde GSD (.planning/phases/02-andamio, decisiones D2 y D5). Estado: COMPLETADO (commit f5ffe85).",
+  "acceptance_criteria": [
+    "maplibre-gl instalado y mapa renderizando con tiles MapTiler (con fallback demo tiles sin key)",
+    "Style custom con paleta de marca y pin SVG rojo con sombra dura",
+    "UbicacionPicker fija coords vía click en mapa o lat/lng manual",
+    "Schema de coords migrado a {lat, lng} reales para los 2 seeds existentes"
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "migrated-from-gsd",
+    "phase-02",
+    "andamio",
+    "frontend"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-05-31T03:40:25.292Z",
+  "updated_at": "2026-05-31T03:44:36.142Z",
+  "jira_key": null
+}
