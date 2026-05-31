@@ -1,74 +1,87 @@
+/**
+ * Content types for ecuahuecas.
+ *
+ * Source of truth is now the build-time Sanity SNAPSHOT (`src/content-snapshot.json`,
+ * produced by `scripts/snapshot-sanity.mjs`) rather than local markdown. The
+ * shapes below describe the snapshot rows:
+ *
+ *  - Images are resolved CDN URL strings (precomputed at snapshot time).
+ *  - `Resena.body` and `Critico.bio` are PortableText (`BlockContent`) — the
+ *    same type the `blog-component` library renders via `<BlogPostPreview>`.
+ *  - The Sanity `hueca` has no rich `body`; its prose lives in `descripcion`.
+ */
 import { z } from 'zod'
+import type { BlockContent } from 'blog-component'
 
+// Kept as zod enums because the admin wizard reads `Ciudad.options` at runtime
+// to build the city <select>. The inferred `.type` doubles as the TS type.
 export const Ciudad = z.enum(['Quito', 'Guayaquil', 'Cuenca', 'Manta'])
 export type Ciudad = z.infer<typeof Ciudad>
 
 export const Precio = z.enum(['$', '$$', '$$$'])
 export type Precio = z.infer<typeof Precio>
 
-export const HuecaFrontmatter = z.object({
-  slug: z.string(),
-  nombre: z.string(),
-  ciudad: Ciudad,
-  barrio: z.string(),
-  direccion: z.string(),
-  plato_estrella: z.string(),
-  precio: Precio,
-  rating: z.number().min(0).max(5),
-  reviews: z.number().int().nonnegative().default(0),
-  horario: z.string(),
-  desde: z.number().int(),
-  tags: z.array(z.string()).default([]),
-  fotos: z.array(z.string()).default([]),
-  descripcion: z.string().optional(),
-  coords: z
-    .object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) })
-    .optional(),
-})
-export type HuecaFrontmatter = z.infer<typeof HuecaFrontmatter>
+export interface Coords {
+  lat: number
+  lng: number
+}
 
-export const Hueca = HuecaFrontmatter.extend({
-  body: z.string(),
-})
-export type Hueca = z.infer<typeof Hueca>
+export interface Hueca {
+  slug: string
+  nombre: string
+  ciudad: Ciudad
+  barrio: string
+  direccion: string
+  plato_estrella: string
+  precio: Precio
+  rating: number
+  reviews: number
+  horario: string
+  desde: number
+  tags: string[]
+  /** Resolved CDN image URLs (may be empty until photos are uploaded). */
+  fotos: string[]
+  descripcion?: string
+  coords?: Coords
+}
 
-export const VeredictoBox = z.object({
-  aFavor: z.array(z.string()).default([]),
-  enContra: z.array(z.string()).default([]),
-  ticket: z.string().optional(),
-})
-export type VeredictoBox = z.infer<typeof VeredictoBox>
+export interface VeredictoBox {
+  aFavor: string[]
+  enContra: string[]
+  ticket?: string
+}
 
-export const ResenaFrontmatter = z.object({
-  slug: z.string(),
-  hueca_id: z.string(),
-  critico_id: z.string(),
-  fecha: z.string(),
-  rating: z.number().min(1).max(5),
-  titulo: z.string(),
-  extracto: z.string(),
-  imagen: z.string().optional(),
-  veredicto: VeredictoBox.optional(),
-})
-export type ResenaFrontmatter = z.infer<typeof ResenaFrontmatter>
+export interface Resena {
+  slug: string
+  hueca_id: string
+  critico_id: string
+  fecha: string
+  rating: number
+  titulo: string
+  extracto: string
+  /** Resolved CDN image URL, if any. */
+  imagen?: string
+  veredicto?: VeredictoBox
+  /** Rich review body as PortableText. */
+  body: BlockContent
+}
 
-export const Resena = ResenaFrontmatter.extend({
-  body: z.string(),
-})
-export type Resena = z.infer<typeof Resena>
+export interface Critico {
+  slug: string
+  nombre: string
+  /** Resolved CDN avatar URL, if any. */
+  avatar?: string
+  ciudad: Ciudad
+  reviews: number
+  especialidad: string
+  desde: number
+  /** Crítico bio as PortableText. */
+  bio: BlockContent
+}
 
-export const CriticoFrontmatter = z.object({
-  slug: z.string(),
-  nombre: z.string(),
-  avatar: z.string().optional(),
-  ciudad: Ciudad,
-  reviews: z.number().int().nonnegative().default(0),
-  especialidad: z.string(),
-  desde: z.number().int(),
-})
-export type CriticoFrontmatter = z.infer<typeof CriticoFrontmatter>
-
-export const Critico = CriticoFrontmatter.extend({
-  body: z.string(),
-})
-export type Critico = z.infer<typeof Critico>
+/** Shape of the generated `src/content-snapshot.json`. */
+export interface ContentSnapshot {
+  huecas: Hueca[]
+  criticos: Critico[]
+  resenas: Resena[]
+}
