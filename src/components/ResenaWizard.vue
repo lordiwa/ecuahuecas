@@ -85,10 +85,9 @@ const publishedSlug = ref<string | null>(null)
 // Step-1 new-hueca validation message (mirrors the publishError pattern).
 const nuevaHuecaError = ref<string | null>(null)
 
-// True unless we're creating a new hueca that's missing required core fields.
-const nuevaHuecaValid = computed(
-  () => huecaMode.value !== 'nueva' || isNuevaHuecaValid(nuevaHueca),
-)
+// Shared message for the next()/onPublicar new-hueca guards (criterion 3).
+const NUEVA_HUECA_REQUIRED_MSG =
+  'Completa los campos obligatorios de la nueva hueca: nombre, ciudad, barrio, dirección, plato estrella y precio.'
 
 // tags edited as a single comma-separated input; split/join, trim, drop empties.
 const tagsInput = computed<string>({
@@ -184,8 +183,7 @@ async function onPublicar() {
   }
   // Block publishing a new hueca that's missing required core fields.
   if (huecaMode.value === 'nueva' && !isNuevaHuecaValid(nuevaHueca)) {
-    publishError.value =
-      'Completa los campos obligatorios de la nueva hueca: nombre, ciudad, barrio, dirección, plato estrella y precio.'
+    publishError.value = NUEVA_HUECA_REQUIRED_MSG
     return
   }
   publishing.value = true
@@ -240,8 +238,7 @@ function verResena() {
 function next() {
   // Block leaving step 1 when creating a new hueca with missing core fields.
   if (step.value === 1 && huecaMode.value === 'nueva' && !isNuevaHuecaValid(nuevaHueca)) {
-    nuevaHuecaError.value =
-      'Completa los campos obligatorios de la nueva hueca: nombre, ciudad, barrio, dirección, plato estrella y precio.'
+    nuevaHuecaError.value = NUEVA_HUECA_REQUIRED_MSG
     return
   }
   nuevaHuecaError.value = null
@@ -440,13 +437,7 @@ function backToList() {
       <div class="nav-group">
         <button type="button" class="btn btn--ghost" @click="backToList">← Borradores</button>
         <button type="button" class="btn btn--blanco" :disabled="step === 1" @click="prev">Anterior</button>
-        <button
-          v-if="step < STEPS.length"
-          type="button"
-          class="btn btn--azul"
-          :disabled="step === 1 && !nuevaHuecaValid"
-          @click="next"
-        >Siguiente</button>
+        <button v-if="step < STEPS.length" type="button" class="btn btn--azul" @click="next">Siguiente</button>
       </div>
       <div class="action-group">
         <span v-if="savedAt" class="saved-note">Guardado {{ savedAt }}</span>

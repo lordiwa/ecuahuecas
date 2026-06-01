@@ -223,7 +223,8 @@ export const publishResena = onCall(
         horario: data.horario,
         desde: data.desde,
         tags: data.tags,
-        rating: Number(data.rating) || 0,
+        // Clamp to the 0–5 scale (resolveNuevaHuecaId clamps again defensively).
+        rating: Math.max(0, Math.min(5, Number(data.rating) || 0)),
       })
       huecaId = resolved.huecaId
     } else {

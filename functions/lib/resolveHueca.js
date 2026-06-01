@@ -49,6 +49,9 @@ export async function resolveNuevaHuecaId(sanity, data) {
   // write blanks. rating is derived from the reseña rating; reviews starts at 1.
   const tags = data && Array.isArray(data.tags) && data.tags.length > 0 ? data.tags : undefined
   const desde = data && Number.isFinite(data.desde) ? data.desde : undefined
+  // Clamp the derived rating to the 0–5 scale so a malformed client payload
+  // can't write an out-of-range value.
+  const rating = Math.max(0, Math.min(5, (data && Number(data.rating)) || 0))
   const huecaDoc = {
     _type: 'hueca',
     nombre,
@@ -63,7 +66,7 @@ export async function resolveNuevaHuecaId(sanity, data) {
     horario: (data && data.horario) || undefined,
     desde,
     tags,
-    rating: (data && Number(data.rating)) || 0,
+    rating,
     reviews: 1,
     activa: true,
   }

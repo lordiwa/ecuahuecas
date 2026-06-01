@@ -120,6 +120,16 @@ describe('resolveNuevaHuecaId', () => {
     expect(doc.reviews).toBe(1)
   })
 
+  it('clamps an out-of-range rating to the 0–5 scale on CREATE', async () => {
+    const high = fakeSanity({ existingId: null })
+    await resolveNuevaHuecaId(high, { nombre: 'Rating Alto', rating: 99 })
+    expect(high.create.mock.calls[0][0].rating).toBe(5)
+
+    const low = fakeSanity({ existingId: null })
+    await resolveNuevaHuecaId(low, { nombre: 'Rating Bajo', rating: -3 })
+    expect(low.create.mock.calls[0][0].rating).toBe(0)
+  })
+
   it('defaults rating to 0 on CREATE when none is supplied', async () => {
     const sanity = fakeSanity({ existingId: null })
     await resolveNuevaHuecaId(sanity, { nombre: 'Sin Rating' })
