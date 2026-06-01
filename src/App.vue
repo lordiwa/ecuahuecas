@@ -1,6 +1,34 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect, onMounted, onBeforeUnmount } from 'vue'
+import { useHead } from '@unhead/vue'
 import { useAuth } from '@/composables/useAuth'
+import { absoluteUrl } from '@/lib/og'
+
+// Site-wide DEFAULT head. unhead dedupes meta by name/property, so any per-page
+// `useHead` block (HuecaDetail, ResenaDetail, index…) OVERRIDES these. This
+// guarantees EVERY route — including ones with no per-page block (top10, mapa,
+// buscar, crítico) — ships baseline Open Graph + Twitter card tags with the
+// branded static fallback image, so social previews never render blank.
+const ogDefault = absoluteUrl('/og-default.png')
+useHead({
+  meta: [
+    { property: 'og:type', content: 'website' },
+    { property: 'og:site_name', content: 'EcuaHuecas' },
+    { property: 'og:title', content: 'EcuaHuecas — Comida de calle, sin filtros' },
+    {
+      property: 'og:description',
+      content: 'Reseñas honestas de huecas ecuatorianas: comida de calle, sin filtros.',
+    },
+    { property: 'og:image', content: ogDefault },
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: 'EcuaHuecas — Comida de calle, sin filtros' },
+    {
+      name: 'twitter:description',
+      content: 'Reseñas honestas de huecas ecuatorianas: comida de calle, sin filtros.',
+    },
+    { name: 'twitter:image', content: ogDefault },
+  ],
+})
 
 const theme = ref<'light' | 'dark'>('light')
 
@@ -68,7 +96,7 @@ function toggleTheme() {
 
   <header class="app-header">
     <RouterLink to="/" class="logo">
-      <img src="/gallinazo.png" width="36" height="36" alt="" />
+      <img src="/logo-72.png" width="36" height="36" alt="" />
       <span class="logo-text">EcuaHuecas</span>
     </RouterLink>
     <nav class="app-nav">

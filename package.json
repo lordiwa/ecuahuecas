@@ -6,6 +6,7 @@
   "description": "Sitio editorial de reseñas de comida de calle ecuatoriana",
   "scripts": {
     "dev": "vite",
+    "assets": "node scripts/gen-assets.mjs",
     "snapshot": "node scripts/snapshot-sanity.mjs",
     "build": "node scripts/snapshot-sanity.mjs && vite-ssg build",
     "preview": "vite preview",
@@ -35,6 +36,8 @@
     "@vitejs/plugin-vue": "^5.2.1",
     "get-shit-done-cc": "^1.40.0",
     "jsdom": "^29.1.1",
+    "png-to-ico": "^3.0.1",
+    "sharp": "^0.34.5",
     "typescript": "^5.7.2",
     "vite": "^6.0.3",
     "vite-imagetools": "^7.0.5",

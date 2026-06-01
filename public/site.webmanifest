@@ -1,0 +1,22 @@
+{
+  "name": "EcuaHuecas",
+  "short_name": "EcuaHuecas",
+  "description": "Reseñas de comida de calle ecuatoriana, sin filtros.",
+  "lang": "es",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFF8E7",
+  "theme_color": "#FFCB05",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

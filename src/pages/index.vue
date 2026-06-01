@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { useHead } from '@unhead/vue'
 import { huecas, resenas, criticos, huecasTop } from '@/lib/content'
+import { absoluteUrl } from '@/lib/og'
 import Estrellas from '@/components/Estrellas.vue'
 import PrecioDots from '@/components/PrecioDots.vue'
 import Foto from '@/components/Foto.vue'
 
+// Home page. The branded static og:image comes from App.vue's defaults; here we
+// pin the canonical og:url. og:title/description/type override the defaults.
 useHead({
   title: 'EcuaHuecas — Comida de calle, sin filtros',
   meta: [
@@ -16,6 +19,7 @@ useHead({
     { property: 'og:title', content: 'EcuaHuecas' },
     { property: 'og:description', content: 'Comida de calle, sin filtros.' },
     { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: absoluteUrl('/') },
   ],
 })
 

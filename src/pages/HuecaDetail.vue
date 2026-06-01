@@ -3,6 +3,7 @@ import { useRoute } from 'vue-router'
 import { computed } from 'vue'
 import { useHead } from '@unhead/vue'
 import { getHueca, resenasDeHueca } from '@/lib/content'
+import { ogImageUrl, absoluteUrl } from '@/lib/og'
 import Estrellas from '@/components/Estrellas.vue'
 import PrecioDots from '@/components/PrecioDots.vue'
 import Foto from '@/components/Foto.vue'
@@ -12,15 +13,32 @@ const slug = computed(() => String(route.params.slug))
 const hueca = computed(() => getHueca(slug.value))
 const resenas = computed(() => (hueca.value ? resenasDeHueca(hueca.value.slug) : []))
 
-useHead(() => ({
-  title: hueca.value ? `${hueca.value.nombre} — EcuaHuecas` : 'Hueca no encontrada',
-  meta: hueca.value
-    ? [
-        { name: 'description', content: hueca.value.descripcion ?? `${hueca.value.plato_estrella} en ${hueca.value.ciudad}.` },
-        { property: 'og:title', content: hueca.value.nombre },
-      ]
-    : [],
-}))
+// Per-page Open Graph. og:image is the hueca's first photo (hueca.fotos[0])
+// as a 1200x630 card, with the branded static fallback when it has none.
+// Overrides App.vue's defaults via unhead dedupe; every `content` is a string.
+useHead(() => {
+  const h = hueca.value
+  if (!h) {
+    return { title: 'Hueca no encontrada — EcuaHuecas', meta: [] }
+  }
+  const desc = h.descripcion ?? `${h.plato_estrella} en ${h.ciudad}.`
+  const url = absoluteUrl(`/huecas/${h.slug}`)
+  const image = ogImageUrl(h.fotos[0] || undefined)
+  return {
+    title: `${h.nombre} — EcuaHuecas`,
+    meta: [
+      { name: 'description', content: desc },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:title', content: h.nombre },
+      { property: 'og:description', content: desc },
+      { property: 'og:image', content: image },
+      { property: 'og:url', content: url },
+      { name: 'twitter:title', content: h.nombre },
+      { name: 'twitter:description', content: desc },
+      { name: 'twitter:image', content: image },
+    ],
+  }
+})
 </script>
 
 <template>

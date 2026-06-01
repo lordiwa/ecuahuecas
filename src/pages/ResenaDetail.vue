@@ -4,6 +4,7 @@ import { computed } from 'vue'
 import { useHead } from '@unhead/vue'
 import { BlogPostPreview } from 'blog-component'
 import { getResena, getHueca, getCritico } from '@/lib/content'
+import { ogImageUrl, absoluteUrl } from '@/lib/og'
 import Estrellas from '@/components/Estrellas.vue'
 import Foto from '@/components/Foto.vue'
 
@@ -16,10 +17,34 @@ const critico = computed(() => (resena.value ? getCritico(resena.value.critico_i
 // PortableText `internalLink` slugs point at other reseñas → /resenas/:slug.
 const resolveInternalHref = (s: string) => `/resenas/${s}`
 
-useHead(() => ({
-  title: resena.value ? `${resena.value.titulo} — EcuaHuecas` : 'Reseña no encontrada',
-  meta: resena.value ? [{ name: 'description', content: resena.value.extracto }] : [],
-}))
+// Per-page Open Graph. This is the most-shared page, so the og:image is the
+// reseña's OWN uploaded photo (resena.imagen) transformed to a 1200x630 card;
+// when absent it falls back to the branded static card. Overrides App.vue's
+// defaults via unhead's property/name dedupe. All `content` values are strings
+// (never undefined) so no malformed tags are emitted for missing data.
+useHead(() => {
+  const r = resena.value
+  if (!r) {
+    return { title: 'Reseña no encontrada — EcuaHuecas', meta: [] }
+  }
+  const desc = r.extracto || `Reseña de ${r.titulo} en EcuaHuecas.`
+  const url = absoluteUrl(`/resenas/${r.slug}`)
+  const image = ogImageUrl(r.imagen || undefined)
+  return {
+    title: `${r.titulo} — EcuaHuecas`,
+    meta: [
+      { name: 'description', content: desc },
+      { property: 'og:type', content: 'article' },
+      { property: 'og:title', content: r.titulo },
+      { property: 'og:description', content: desc },
+      { property: 'og:image', content: image },
+      { property: 'og:url', content: url },
+      { name: 'twitter:title', content: r.titulo },
+      { name: 'twitter:description', content: desc },
+      { name: 'twitter:image', content: image },
+    ],
+  }
+})
 </script>
 
 <template>
