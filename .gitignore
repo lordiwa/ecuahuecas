@@ -24,3 +24,6 @@ firebase-admin*.json
 
 # Build-time snapshots (regenerated each build)
 src/content-snapshot.json
+
+# Firebase deploy cache
+.firebase/

@@ -8,7 +8,7 @@
     "OG images dinámicos por página/reseña para previews sociales",
     "Assets servidos optimizados (formato/compresión) sin romper el SSG"
   ],
-  "status": "todo",
+  "status": "done",
   "priority": "medium",
   "labels": [
     "migrated-from-gsd",
@@ -21,8 +21,14 @@
   ],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-01T03:38:21.748Z",
+      "body": "DONE. Commits 4513047 (og helper) + 236e1d0 (assets + per-page OG) on main. Independent review PASS, no HIGH/MEDIUM.\n\n- Gallinazo source (5.8MB) moved to brand/gallinazo-source.png (out of public/, never ships); scripts/gen-assets.mjs (npm run assets, uses sharp + png-to-ico) generates the optimized set into public/: favicon 16/32, favicon.ico, apple-touch-icon 180, android-chrome 192/512, logo-72.png (header), og-default.png (1200x630 branded). site.webmanifest added; index.html head updated; App.vue logo repointed. dist no longer contains any multi-MB gallinazo (largest image now og-default.png 381KB).\n- Dynamic OG via @unhead/vue rendered by vite-ssg: App.vue sets site-wide defaults (og/twitter, summary_large_image), per-page useHead overrides. ResenaDetail (previously had NO head) now sets title/description/og:image from resena.imagen (Sanity transform w=1200&h=630&fit=crop) with og-default fallback; HuecaDetail extended (og:image from fotos[0]); home og:url. New pure helper src/lib/og.ts (ogImageUrl/absoluteUrl), 9 unit tests.\n- Build verified: reseña page bakes exactly one og:image = Sanity CDN URL w/ transform; imagen-less reseña + non-content pages fall back to absolute og-default.png; no duplicate/empty meta. 61 tests green, typecheck clean.\n\nHANDOFF to TASK-015: og:url/og:image-fallback bake the site base URL at SSG time. VITE_SITE_URL defaults to https://ecuahuecas.web.app; set the real domain in CI and rebuild. Optional: bundle a font for deterministic OG-card regeneration (committed PNG is fine as-is)."
+    }
+  ],
   "created_at": "2026-05-31T03:41:26.240Z",
-  "updated_at": "2026-05-31T03:41:26.240Z",
+  "updated_at": "2026-06-01T03:38:25.500Z",
   "jira_key": null
 }

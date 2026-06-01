@@ -10,7 +10,7 @@
     "Publicar escribe un documento resena (y hueca nueva si se creó) en Sanity gvc4yjqj con autoGenerateArrayKeys; borra el draft local con toast + link",
     "El contenido publicado aparece en el siguiente build (snapshot de TASK-018) para lectores anónimos"
   ],
-  "status": "in_progress",
+  "status": "done",
   "priority": "medium",
   "labels": [
     "phase-02",
@@ -28,8 +28,14 @@
   ],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-01T00:53:32.821Z",
+      "body": "DONE — implemented (TDD), independently reviewed (PASS, no HIGH), deployed, and live-verified.\n\nCommits on main:\n- c6eb473 feat: AI reseña draft + Sanity publish callables wired into /admin\n- 1226e49 fix: guard against publishing imageless reseña + document new env params\n- 6f5f5a1 fix: drop ANTHROPIC_MODEL from secrets:[] and correct 401/403 gotcha note\n\nWhat shipped:\n- Two Functions v2 callables (us-central1, Node 22), críticos/admins only: generateResenaDraft (Claude forced-tool-call → {titulo,extracto,bodyMarkdown}) and publishResena (uploads photos to Sanity image assets, writes resena + optional new hueca to gvc4yjqj/production with autoGenerateArrayKeys). Pure markdownToPortableText + slugify in functions/lib/portableText.js (unit-tested).\n- Wizard (ResenaWizard.vue): \"Generar con IA\" button + real onPublicar (publishes, deletes local draft, success banner/link), optional crítico selector, imageless-publish guard.\n- functions runtime upgraded Node 20 → 22.\n\nSecrets: SANITY_WRITE_TOKEN + ANTHROPIC_API_KEY now in Google Secret Manager (defineSecret, bound via secrets:[]); ANTHROPIC_MODEL + ADMIN_EMAIL stay as defineString in functions/.env. Those two secret keys were commented out of functions/.env (CLI refuses to deploy a secret-named key that also lives in .env). No secret in repo/bundle.\n\nVerification (acceptance criteria):\n1. Deployed w/ secrets server-side, none in browser/repo — OK.\n2. Anonymous rejected — curl POST to both deployed callables returns HTTP 401 {\"status\":\"UNAUTHENTICATED\"} (reachable + guard ran; allUsers invoker correctly set on clean create).\n3. AI draft — generateResenaDraft's exact prompt/tool/model (claude-haiku-4-5-20251001) produced valid titulo/extracto/markdown against the real Anthropic API.\n4/5/6. Wrote a real labeled test reseña (+ new hueca, uploaded 1x1 image asset) to production via the real portableText.js converter + publishResena's exact doc shape; the real snapshot (scripts/snapshot-sanity.mjs) picked it up (huecas 2→3, resenas 1→2) with hueca/critico refs resolved to slugs, rating, imagen asset, link markDef, and veredicto blockquote all present. Test docs + asset then deleted; snapshot back to 2/1.\n\nTest = 43 vitest passing; typecheck clean. The deployed HTTPS callable's auth gate was verified via curl (401); a full browser round-trip with a real crítico ID token was not done headlessly (needs interactive Google sign-in) — the publish/persistence logic was instead exercised end-to-end against the same real Sanity/Anthropic services.\n\nFollow-up (not blocking, suggest TASK-019 or a new ticket): veredicto is currently appended to the body as a blockquote rather than written to resena.veredicto {aFavor,enContra,ticket} — the wizard collects free text. Decide whether to capture structured veredicto fields."
+    }
+  ],
   "created_at": "2026-05-31T03:41:17.037Z",
-  "updated_at": "2026-05-31T18:19:25.379Z",
+  "updated_at": "2026-06-01T00:53:35.612Z",
   "jira_key": null
 }

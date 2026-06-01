@@ -1,0 +1,36 @@
+{
+  "key": "TASK-021",
+  "title": "publishResena: reutilizar hueca existente por slug en vez de crear duplicados",
+  "description": "Cuando el wizard publica con huecaMode='nueva', publishResena (functions/publishResena.js) SIEMPRE crea un documento hueca nuevo con slug = slugify(nombre), sin verificar si ya existe una hueca con ese slug. Publicar la misma hueca nueva dos veces genera huecas duplicadas con el MISMO slug (observado en producción: dos 'kim-s-chicken'), lo que rompe la página de detalle de la hueca (slug ambiguo). Arreglar: en la rama 'nueva', antes de crear, consultar si existe una hueca con ese slug; si existe, reutilizar su _id (no crear duplicado, no sobrescribir sus campos). La reseña queda referenciando la hueca existente. Mantener el comportamiento de 'existente' igual. Considerar también el caso donde el crítico realmente quiere una hueca distinta con el mismo nombre (documentar el trade-off; para el andamio, reutilizar por slug es aceptable). Hecho TDD: test del helper de resolución de hueca; review independiente; redeploy de la función (Node 22, --account rmatovelle84@gmail.com --project ecuahuecas).",
+  "acceptance_criteria": [
+    "Publicar con huecaMode='nueva' cuando ya existe una hueca con ese slug reutiliza la hueca existente (mismo _id) en vez de crear otra",
+    "No se crean dos huecas con el mismo slug.current",
+    "La rama 'existente' (buscar por slug) no cambia de comportamiento",
+    "Existe un test unitario que cubre la resolución reuse-vs-create; npm test verde; npm run typecheck limpio",
+    "Función redeployada y verificada (curl 401 anon)"
+  ],
+  "status": "done",
+  "priority": "medium",
+  "labels": [
+    "phase-02",
+    "cloud-function",
+    "sanity",
+    "bugfix"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-013"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-01T01:50:31.392Z",
+      "body": "DONE. Commit 082ed13 on main; redeployed publishResena (Node 22, us-central1) and verified anon curl=401. Hueca resolution factored into functions/lib/resolveHueca.js (resolveNuevaHuecaId): on huecaMode='nueva', queries *[_type==\"hueca\" && slug.current==$slug][0]._id and reuses the existing hueca id if found (no create, no overwrite), else creates as before. 'existente' branch unchanged. Independent review PASS, no HIGH (LOW: documented race window on concurrent same-name publishes — accepted for andamio; extra photos still append to the reused hueca's fotos, which is correct). 52 tests green, typecheck clean, import smoke-check OK."
+    }
+  ],
+  "created_at": "2026-06-01T01:19:01.060Z",
+  "updated_at": "2026-06-01T01:50:34.112Z",
+  "jira_key": null
+}

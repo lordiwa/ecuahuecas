@@ -1,0 +1,37 @@
+{
+  "key": "TASK-020",
+  "title": "Reader render: mostrar imágenes reales (resena.imagen / hueca.fotos) en vez del placeholder Foto",
+  "description": "Las páginas de lectura pasan la URL de imagen del snapshot al prop `color` del componente Foto (placeholder SVG) en vez de a `src`, así que las imágenes reales subidas por publishResena (TASK-013) nunca se renderizan — sale el patrón de relleno. El componente Foto YA soporta `src` (renderiza <img> cuando src está presente, si no muestra el placeholder con `color`). Los campos resena.imagen / hueca.fotos[] en el snapshot son URL string del CDN cuando hay foto, o vacío/undefined cuando no (nunca un color hex; los hex en los templates son solo fallbacks). Hay que pasar la URL a `:src` y dejar el color como fallback `:color`. Usos afectados: src/pages/ResenaDetail.vue:35 (resena.imagen), src/pages/HuecaDetail.vue:37 (hueca.fotos[0]), src/pages/index.vue:40 (destacada.fotos[0]) y :68 (r.imagen).",
+  "acceptance_criteria": [
+    "En las 4 ubicaciones el valor de imagen (resena.imagen / hueca.fotos[0]) se pasa a Foto :src, manteniendo un :color de fallback (resena #E8833A, hueca #FFCB05)",
+    "Una reseña publicada con foto muestra la imagen real en su página de detalle (/resena/:slug) y en la tarjeta del home",
+    "Una hueca con fotos muestra la primera foto; documentos del seed sin imagen siguen mostrando el placeholder SVG (sin <img> roto)",
+    "npm run typecheck limpio y npm test verde; ninguna imagen rota (no <img src=undefined>)"
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "phase-02",
+    "frontend",
+    "sanity",
+    "render",
+    "bugfix"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-013",
+    "TASK-018"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-01T01:45:18.281Z",
+      "body": "DONE. Commit a8e4ea2 on main. Reader pages now pass the image URL to Foto :src (with :color fallback) at all 4 sites (ResenaDetail, HuecaDetail, index x2). Independent review: PASS, no HIGH (one LOW: pre-existing noUncheckedIndexedAccess type hole on fotos[0], guarded at runtime with || undefined). 46→ tests green, typecheck clean. Foto.test.ts locks the img-vs-placeholder contract via @vue/server-renderer (added @vitejs/plugin-vue to vitest.config). Frontend-only — user must re-run build/snapshot or restart dev to see real images."
+    }
+  ],
+  "created_at": "2026-06-01T01:18:48.517Z",
+  "updated_at": "2026-06-01T01:45:21.110Z",
+  "jira_key": null
+}

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-31T18:19:25.379Z",
+  "generated_at": "2026-06-01T03:42:03.266Z",
   "tasks": [
     {
       "key": "TASK-006",
@@ -46,19 +46,19 @@
     {
       "key": "TASK-013",
       "title": "Fase 02 A.7 — Persistencia Sanity vía Cloud Function (publicar reseñas + IA + imágenes)",
-      "status": "in_progress",
+      "status": "done",
       "priority": "medium"
     },
     {
       "key": "TASK-014",
       "title": "Fase 03 — Optimización de assets (gallinazo + favicons + OG images dinámicos)",
-      "status": "todo",
+      "status": "done",
       "priority": "medium"
     },
     {
       "key": "TASK-015",
       "title": "Fase 04 — Firebase Hosting deploy + GitHub Actions (cron de rebuild)",
-      "status": "todo",
+      "status": "in_progress",
       "priority": "medium"
     },
     {
@@ -84,6 +84,18 @@
       "title": "Fase 02 — Deuda técnica post-migración Sanity (tests del snapshot/render + limpieza seed markdown)",
       "status": "todo",
       "priority": "low"
+    },
+    {
+      "key": "TASK-020",
+      "title": "Reader render: mostrar imágenes reales (resena.imagen / hueca.fotos) en vez del placeholder Foto",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-021",
+      "title": "publishResena: reutilizar hueca existente por slug en vez de crear duplicados",
+      "status": "done",
+      "priority": "medium"
     }
   ]
 }
