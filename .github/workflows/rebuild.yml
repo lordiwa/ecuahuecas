@@ -1,0 +1,65 @@
+# Scheduled rebuild of ecuahuecas (SSG) + redeploy to Firebase Hosting.
+#
+# WHY: the public site is BUILD-TIME static (zero-JS for anonymous readers).
+# Newly published reseñas/huecas in Sanity will NOT appear until the static
+# snapshot is regenerated and the site is rebuilt + redeployed. This cron does
+# exactly that on a daily cadence, mirroring deploy.yml's build+deploy.
+#
+# The ticket text says "snapshot-firestore", but this project migrated to
+# Sanity — `npm run build` runs scripts/snapshot-sanity.mjs (the snapshot) then
+# vite-ssg build, so the cron keeps the static Sanity snapshot fresh.
+#
+# Schedule: 11:00 UTC daily == 06:00 America/Guayaquil (ECT, UTC-5).
+# (Adjust the cron if the desired local time changes.)
+#
+# Required GitHub repo configuration is identical to deploy.yml (see DEPLOY.md).
+name: Scheduled rebuild (refresh Sanity snapshot)
+
+on:
+  schedule:
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: 'Build SSG (Sanity snapshot + vite-ssg)'
+        env:
+          # Secret: Sanity read token (snapshot reads WITH this).
+          SANITY_READ_TOKEN: ${{ secrets.SANITY_READ_TOKEN }}
+          # Public, bundle-safe VITE_* (GitHub Actions Variables).
+          VITE_SANITY_PROJECT_ID: ${{ vars.VITE_SANITY_PROJECT_ID }}
+          VITE_SANITY_DATASET: ${{ vars.VITE_SANITY_DATASET }}
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+          # Canonical site URL used for OG/SEO (Firebase default domain).
+          VITE_SITE_URL: https://ecuahuecas.web.app
+        run: npm run build
+
+      - name: 'Deploy to Firebase Hosting (channel: live)'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ECUAHUECAS }}
+          projectId: ecuahuecas
+          channelId: live
