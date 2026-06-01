@@ -14,15 +14,19 @@
 //
 // ─────────────────────────────────────────────────────────────────────────────
 // GEN2 CALLABLE GOTCHA — allUsers run.invoker / 401-vs-403 curl check:
-//   A v2 onCall is a Cloud Run service. If its IAM run.invoker binding does NOT
-//   include `allUsers`, the platform rejects the request at the edge with HTTP
-//   401 BEFORE our auth code runs — which looks like a Firebase "unauthenticated"
-//   bug but is really a missing public-invoker binding. The Firebase CLI adds the
-//   binding on deploy, but org policy can strip it. Diagnose with curl:
+//   A v2 onCall is a Cloud Run service. If its IAM run.invoker binding DOES
+//   include `allUsers`, the platform forwards the request and our auth code runs;
+//   invoked with no auth, our guard throws HttpsError('unauthenticated') which
+//   the callable protocol returns as HTTP 401. If the `allUsers` binding is
+//   MISSING, the Google Front End rejects the request at the edge with HTTP 403
+//   BEFORE our code runs. Diagnose with curl:
 //     curl -i -X POST <fn-url> -H 'Content-Type: application/json' -d '{"data":{}}'
-//       → 403 (our HttpsError 'unauthenticated'/'permission-denied') = GOOD, the
-//         function ran and rejected on app-level auth.
-//       → 401 (HTML/text from the platform) = BAD, fix run.invoker:
+//       → 401 (our HttpsError 'unauthenticated') = GOOD, the function is reachable
+//         and ran our app-level auth guard. (Our 'permission-denied' would be 403,
+//         but only AFTER our code runs — i.e. for an authed-but-unauthorized call.)
+//       → 403 (rejected by the platform, before our code) = BAD, missing
+//         public-invoker binding. The Firebase CLI adds it on deploy, but org
+//         policy can strip it; fix by deleting + recreating the function, or:
 //         gcloud run services add-iam-policy-binding <svc> \
 //           --region us-central1 --member allUsers --role roles/run.invoker
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,7 +108,10 @@ const SYSTEM_PROMPT = [
 // ── generateResenaDraft ──────────────────────────────────────────────────────
 
 export const generateResenaDraft = onCall(
-  { region: REGION, secrets: [ANTHROPIC_API_KEY, ANTHROPIC_MODEL] },
+  // ANTHROPIC_MODEL is a defineString (read from functions/.env at deploy like
+  // ADMIN_EMAIL) — it must NOT go in `secrets:[...]`, which only accepts
+  // defineSecret params. .value() still works at runtime.
+  { region: REGION, secrets: [ANTHROPIC_API_KEY] },
   async (request) => {
     assertCallerIsCriticoOrAdmin(request)
 
@@ -185,7 +192,9 @@ async function uniqueResenaSlug(sanity, base) {
 }
 
 export const publishResena = onCall(
-  { region: REGION, secrets: [SANITY_WRITE_TOKEN, ANTHROPIC_API_KEY, ANTHROPIC_MODEL] },
+  // ANTHROPIC_MODEL stays OUT of secrets:[...] (it's a defineString, not a
+  // defineSecret); .value() reads it from functions/.env at runtime.
+  { region: REGION, secrets: [SANITY_WRITE_TOKEN, ANTHROPIC_API_KEY] },
   async (request) => {
     assertCallerIsCriticoOrAdmin(request)
 
