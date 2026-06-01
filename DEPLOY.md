@@ -51,8 +51,9 @@ Rationale (JSON can't hold comments, so it lives here):
 ## GitHub Actions workflows
 
 Two workflows in `.github/workflows/`, both Node 22 + `npm ci`, both deploy to
-Firebase Hosting channel `live` via `FirebaseExtended/action-hosting-deploy@v0`
-targeting projectId `ecuahuecas`:
+Firebase Hosting via `firebase-tools` (`npx -y firebase-tools@^14 deploy --only
+hosting --project ecuahuecas --non-interactive`) authenticated with the
+`FIREBASE_TOKEN` secret.
 
 | Workflow      | Trigger                                  | Purpose                                                                 |
 | ------------- | ---------------------------------------- | ----------------------------------------------------------------------- |
@@ -75,7 +76,7 @@ Set these under **Settings → Secrets and variables → Actions**.
 | Secret                              | What it is                                                                                  |
 | ----------------------------------- | ------------------------------------------------------------------------------------------- |
 | `SANITY_READ_TOKEN`                 | A Sanity **Viewer / Read** token for project `gvc4yjqj`, dataset `production`. Used by the snapshot to read the migrated docs. |
-| `FIREBASE_SERVICE_ACCOUNT_ECUAHUECAS` | The **full JSON** of a GCP service account with the **Firebase Hosting Admin** role (see below). |
+| `FIREBASE_TOKEN`                    | A **Firebase CI token** (`firebase login:ci`) used by `firebase-tools` to authenticate the Hosting deploy. |
 
 `GITHUB_TOKEN` is provided automatically by Actions — do **not** create it.
 
@@ -85,36 +86,33 @@ Set these under **Settings → Secrets and variables → Actions**.
 2. **Add API token** → name `ecuahuecas-ci-read` → permission **Viewer** → Save.
 3. Copy the token value and paste it as the `SANITY_READ_TOKEN` secret.
 
-#### Creating `FIREBASE_SERVICE_ACCOUNT_ECUAHUECAS`
+#### Creating `FIREBASE_TOKEN`
 
-Console route:
+> **Why a token and not a service-account JSON?** The GCP org enforces the
+> policy `iam.disableServiceAccountKeyCreation`, so we **cannot** create a
+> service-account JSON key — which means `FirebaseExtended/action-hosting-deploy`
+> (it requires `firebaseServiceAccount`) is unusable. Instead we authenticate the
+> deploy with a Firebase CI token via `firebase-tools`.
 
-1. Google Cloud Console → project **ecuahuecas** → **IAM & Admin → Service Accounts**.
-2. **Create service account** (e.g. `gh-actions-hosting`).
-3. Grant role **Firebase Hosting Admin** (`roles/firebasehosting.admin`).
-4. Open the account → **Keys → Add key → Create new key → JSON** → download.
-5. Paste the **entire JSON file contents** as the `FIREBASE_SERVICE_ACCOUNT_ECUAHUECAS` secret.
+1. Locally, log in **as the project owner** (`rmatovelle84@gmail.com`):
 
-gcloud route (equivalent):
+   ```bash
+   firebase login:ci
+   ```
 
-```bash
-PROJECT=ecuahuecas
-SA=gh-actions-hosting
+   This opens a browser to authenticate, then prints a long-lived CI token.
 
-gcloud iam service-accounts create "$SA" \
-  --project="$PROJECT" --display-name="GitHub Actions Hosting deploy"
+2. Copy the printed token and add it as the GitHub Actions secret
+   **`FIREBASE_TOKEN`**.
 
-gcloud projects add-iam-policy-binding "$PROJECT" \
-  --member="serviceAccount:${SA}@${PROJECT}.iam.gserviceaccount.com" \
-  --role="roles/firebasehosting.admin"
+Notes:
 
-gcloud iam service-accounts keys create key.json \
-  --iam-account="${SA}@${PROJECT}.iam.gserviceaccount.com"
-# Paste the contents of key.json into the secret, then delete the local file.
-```
-
-> Tip: `firebase init hosting:github` can generate and store this service account
-> secret for you automatically.
+- `firebase login:ci` / `--token` print a **deprecation warning** but still work
+  on `firebase-tools` 14 (local CLI is 14.24, and the workflows pin `@^14`).
+- The token is **long-lived**. For a more secure long-term setup, **Workload
+  Identity Federation** (keyless, GitHub OIDC → GCP) is the recommended
+  alternative if you later want to retire the static token. It is out of scope
+  here because the org policy forced the token route for now.
 
 ### Variables (public / bundle-safe)
 

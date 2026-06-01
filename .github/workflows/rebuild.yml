@@ -12,7 +12,10 @@
 # Schedule: 11:00 UTC daily == 06:00 America/Guayaquil (ECT, UTC-5).
 # (Adjust the cron if the desired local time changes.)
 #
-# Required GitHub repo configuration is identical to deploy.yml (see DEPLOY.md).
+# Required GitHub repo configuration is identical to deploy.yml (see DEPLOY.md):
+#   Secrets: SANITY_READ_TOKEN, FIREBASE_TOKEN. Deploy uses firebase-tools with
+#   a Firebase CI token because the org blocks service-account JSON keys
+#   (iam.disableServiceAccountKeyCreation).
 name: Scheduled rebuild (refresh Sanity snapshot)
 
 on:
@@ -56,10 +59,7 @@ jobs:
           VITE_SITE_URL: https://ecuahuecas.web.app
         run: npm run build
 
-      - name: 'Deploy to Firebase Hosting (channel: live)'
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ECUAHUECAS }}
-          projectId: ecuahuecas
-          channelId: live
+      - name: 'Deploy to Firebase Hosting (channel live)'
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: npx -y firebase-tools@^14 deploy --only hosting --project ecuahuecas --non-interactive
