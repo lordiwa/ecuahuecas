@@ -9,7 +9,7 @@
     "Budget alert GCP a $5/mes configurado (cost containment free tier)",
     "Sitio en producción verificado: lectores anónimos cargan zero-JS, SEO/OG correctos"
   ],
-  "status": "in_progress",
+  "status": "in_review",
   "priority": "medium",
   "labels": [
     "migrated-from-gsd",
@@ -25,8 +25,14 @@
   ],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-01T03:59:58.712Z",
+      "body": "SITE IS LIVE: https://ecuahuecas.web.app (deployed manually via firebase --account rmatovelle84 --project ecuahuecas; 75 files). Verified: home 200, /resenas/<slug> 200 via cleanUrls, og:image=Sanity transform + og:type=article baked, favicon set + manifest present. main pushed to origin (cb70df8). Config/CI commit 608a6e9 reviewed: PASS, no HIGH/MEDIUM (no secret leakage; firebase.json SSG-correct; workflows valid).\n\nCriteria status:\n- (1) Deploy a Firebase Hosting funcionando — DONE (live).\n- (5) Sitio en producción verificado (zero-JS estático + OG/SEO) — DONE.\n- (2) GitHub Actions deploy en push — workflow .github/workflows/deploy.yml committed+pushed; ACTIVATES once the user adds repo secrets (SANITY_READ_TOKEN, FIREBASE_SERVICE_ACCOUNT_ECUAHUECAS) + the 8 public VITE_* vars per DEPLOY.md.\n- (3) Cron de rebuild — .github/workflows/rebuild.yml (daily 11:00 UTC + manual dispatch); same secret dependency. This is what auto-refreshes the build-time snapshot so newly published reseñas appear without a manual rebuild.\n- (4) Budget alert $5/mo — MANUAL (GCP console / gcloud), user-owned.\n\nPending = user-owned manual ops (add GitHub secrets to activate CI/cron; set the budget alert). Holding TASK-015 in_review until the user confirms those (orchestrator will verify CI once secrets land), per the user's chosen 'deploy manual ya, CI después' path."
+    }
+  ],
   "created_at": "2026-05-31T03:41:35.444Z",
-  "updated_at": "2026-06-01T03:42:03.266Z",
+  "updated_at": "2026-06-01T04:00:01.663Z",
   "jira_key": null
 }
