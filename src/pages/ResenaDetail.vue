@@ -32,7 +32,7 @@ useHead(() => ({
       <span v-if="hueca">· en <RouterLink :to="`/huecas/${hueca.slug}`">{{ hueca.nombre }}</RouterLink></span>
     </p>
 
-    <Foto :seed="resena.slug" :color="resena.imagen ?? '#E8833A'" aspect="16/9" class="resena-hero" />
+    <Foto :seed="resena.slug" :src="resena.imagen || undefined" :color="'#E8833A'" aspect="16/9" class="resena-hero" />
 
     <div class="resena-body cuerpo-editorial">
       <BlogPostPreview

@@ -34,7 +34,7 @@ useHead(() => ({
     </p>
 
     <div class="hueca-grid">
-      <Foto :seed="hueca.slug" :color="hueca.fotos[0] ?? '#FFCB05'" aspect="4/3" />
+      <Foto :seed="hueca.slug" :src="hueca.fotos[0] || undefined" :color="'#FFCB05'" aspect="4/3" />
       <dl class="hueca-datos">
         <div><dt>Plato estrella</dt><dd>{{ hueca.plato_estrella }}</dd></div>
         <div><dt>Dirección</dt><dd>{{ hueca.direccion }}</dd></div>

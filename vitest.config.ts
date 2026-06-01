@@ -1,7 +1,13 @@
 import { defineConfig } from 'vitest/config'
+import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
+  // The vue plugin compiles single-file components so component render tests
+  // (e.g. src/components/Foto.test.ts) can import `.vue` files directly.
+  // @vue/test-utils is intentionally NOT a dependency; component tests mount via
+  // Vue's own createSSRApp + @vue/server-renderer renderToString instead.
+  plugins: [vue()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

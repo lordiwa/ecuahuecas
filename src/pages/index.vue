@@ -37,7 +37,7 @@ const top = huecasTop(6)
     </p>
 
     <div v-if="destacada" class="hero-destacada">
-      <Foto :seed="destacada.slug" :color="destacada.fotos[0] ?? '#FFCB05'" aspect="16/9" />
+      <Foto :seed="destacada.slug" :src="destacada.fotos[0] || undefined" :color="'#FFCB05'" aspect="16/9" />
       <div class="hero-destacada__cuerpo">
         <p class="eyebrow">Hueca destacada · {{ destacada.ciudad }}</p>
         <h2 class="h-titulo">{{ destacada.nombre }}</h2>
@@ -65,7 +65,7 @@ const top = huecasTop(6)
         :to="`/resenas/${r.slug}`"
         class="card card--hover resena-card"
       >
-        <Foto :seed="r.slug" :color="r.imagen ?? '#E8833A'" aspect="4/3" />
+        <Foto :seed="r.slug" :src="r.imagen || undefined" :color="'#E8833A'" aspect="4/3" />
         <p class="eyebrow">{{ r.fecha }}</p>
         <h3 class="h-titulo resena-card__titulo">{{ r.titulo }}</h3>
         <p class="resena-card__extracto">{{ r.extracto }}</p>
