@@ -6,10 +6,11 @@ import Estrellas from '@/components/Estrellas.vue'
 import UbicacionPicker from '@/components/UbicacionPicker.vue'
 import PhotoUploader, { type Photo } from '@/components/PhotoUploader.vue'
 import { huecas, criticos } from '@/lib/content'
-import { Ciudad } from '@/types/content'
+import { Ciudad, Precio } from '@/types/content'
 import {
   saveDraft,
   deleteDraft,
+  isNuevaHuecaValid,
   type ResenaDraft,
   type DraftPhotoInMemory,
 } from '@/lib/drafts'
@@ -40,6 +41,7 @@ const router = useRouter()
 
 const STEPS = ['Hueca', 'Rating', 'Reseña', 'Fotos']
 const CIUDADES = Ciudad.options
+const PRECIOS = Precio.options
 
 // Local, mutable copy of the incoming draft.
 const id = props.initial.id
@@ -79,6 +81,25 @@ const generateError = ref<string | null>(null)
 const publishing = ref(false)
 const publishError = ref<string | null>(null)
 const publishedSlug = ref<string | null>(null)
+
+// Step-1 new-hueca validation message (mirrors the publishError pattern).
+const nuevaHuecaError = ref<string | null>(null)
+
+// True unless we're creating a new hueca that's missing required core fields.
+const nuevaHuecaValid = computed(
+  () => huecaMode.value !== 'nueva' || isNuevaHuecaValid(nuevaHueca),
+)
+
+// tags edited as a single comma-separated input; split/join, trim, drop empties.
+const tagsInput = computed<string>({
+  get: () => nuevaHueca.tags.join(', '),
+  set: (raw: string) => {
+    nuevaHueca.tags = raw
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0)
+  },
+})
 
 const huecaActual = computed(() => huecas.find((h) => h.slug === huecaId.value) ?? null)
 
@@ -161,6 +182,12 @@ async function onPublicar() {
       'Las fotos de este borrador se perdieron al recargar. Vuelve a subirlas antes de publicar.'
     return
   }
+  // Block publishing a new hueca that's missing required core fields.
+  if (huecaMode.value === 'nueva' && !isNuevaHuecaValid(nuevaHueca)) {
+    publishError.value =
+      'Completa los campos obligatorios de la nueva hueca: nombre, ciudad, barrio, dirección, plato estrella y precio.'
+    return
+  }
   publishing.value = true
   publishError.value = null
   publishedSlug.value = null
@@ -179,6 +206,13 @@ async function onPublicar() {
       ciudad: nuevaHueca.ciudad,
       descripcion: nuevaHueca.descripcion,
       coords: nuevaHueca.coords,
+      barrio: nuevaHueca.barrio,
+      direccion: nuevaHueca.direccion,
+      plato_estrella: nuevaHueca.plato_estrella,
+      precio: nuevaHueca.precio,
+      horario: nuevaHueca.horario,
+      desde: nuevaHueca.desde,
+      tags: nuevaHueca.tags,
       rating: rating.value,
       titulo: titulo.value,
       tagline: tagline.value,
@@ -204,6 +238,13 @@ function verResena() {
 }
 
 function next() {
+  // Block leaving step 1 when creating a new hueca with missing core fields.
+  if (step.value === 1 && huecaMode.value === 'nueva' && !isNuevaHuecaValid(nuevaHueca)) {
+    nuevaHuecaError.value =
+      'Completa los campos obligatorios de la nueva hueca: nombre, ciudad, barrio, dirección, plato estrella y precio.'
+    return
+  }
+  nuevaHuecaError.value = null
   if (step.value < STEPS.length) step.value += 1
 }
 function prev() {
@@ -281,13 +322,47 @@ function backToList() {
           </select>
         </div>
         <div class="field">
+          <label class="field-label" for="nh-barrio">Barrio</label>
+          <input id="nh-barrio" v-model="nuevaHueca.barrio" class="input" type="text" placeholder="Ej: Tarqui" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="nh-direccion">Dirección</label>
+          <input id="nh-direccion" v-model="nuevaHueca.direccion" class="input" type="text" placeholder="Ej: Av. 4 de Noviembre y Calle 12" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="nh-plato">Plato estrella</label>
+          <input id="nh-plato" v-model="nuevaHueca.plato_estrella" class="input" type="text" placeholder="Ej: Encebollado de albacora" />
+        </div>
+        <div class="field">
+          <label class="field-label">Precio</label>
+          <div class="mode-switch">
+            <label v-for="p in PRECIOS" :key="p" class="radio">
+              <input type="radio" :value="p" v-model="nuevaHueca.precio" />
+              <span>{{ p }}</span>
+            </label>
+          </div>
+        </div>
+        <div class="field">
           <label class="field-label" for="nh-desc">Descripción</label>
           <textarea id="nh-desc" v-model="nuevaHueca.descripcion" class="input" rows="3" placeholder="Una línea sobre el lugar…"></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label" for="nh-horario">Horario (opcional)</label>
+          <input id="nh-horario" v-model="nuevaHueca.horario" class="input" type="text" placeholder="Ej: 8:00 - 14:00" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="nh-desde">Desde / año (opcional)</label>
+          <input id="nh-desde" v-model.number="nuevaHueca.desde" class="input" type="number" placeholder="Ej: 1990" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="nh-tags">Tags (opcional, separados por coma)</label>
+          <input id="nh-tags" v-model="tagsInput" class="input" type="text" placeholder="Ej: mariscos, desayuno" />
         </div>
         <div class="field">
           <label class="field-label">Ubicación</label>
           <UbicacionPicker v-model="nuevaHueca.coords" height="360px" />
         </div>
+        <p v-if="nuevaHuecaError" class="warn">{{ nuevaHuecaError }}</p>
       </div>
     </section>
 
@@ -365,7 +440,13 @@ function backToList() {
       <div class="nav-group">
         <button type="button" class="btn btn--ghost" @click="backToList">← Borradores</button>
         <button type="button" class="btn btn--blanco" :disabled="step === 1" @click="prev">Anterior</button>
-        <button v-if="step < STEPS.length" type="button" class="btn btn--azul" @click="next">Siguiente</button>
+        <button
+          v-if="step < STEPS.length"
+          type="button"
+          class="btn btn--azul"
+          :disabled="step === 1 && !nuevaHuecaValid"
+          @click="next"
+        >Siguiente</button>
       </div>
       <div class="action-group">
         <span v-if="savedAt" class="saved-note">Guardado {{ savedAt }}</span>

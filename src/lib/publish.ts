@@ -8,6 +8,7 @@
 import { httpsCallable } from 'firebase/functions'
 import { getFirebaseFunctions } from './firebase'
 import type { DraftPhotoInMemory } from './drafts'
+import type { Precio } from '@/types/content'
 
 // ── generateResenaDraft ──────────────────────────────────────────────────────
 
@@ -59,6 +60,14 @@ export interface PublishResenaPayload {
   ciudad?: string
   descripcion?: string
   coords?: { lat: number; lng: number } | null
+  /** New-hueca-only fields (CREATE path); ignored for 'existente'. */
+  barrio?: string
+  direccion?: string
+  plato_estrella?: string
+  precio?: Precio
+  horario?: string
+  desde?: number | null
+  tags?: string[]
   rating: number
   titulo: string
   tagline: string

@@ -5,8 +5,10 @@ import {
   listDrafts,
   deleteDraft,
   stripPhotoBlobs,
+  isNuevaHuecaValid,
   DRAFT_PREFIX,
   type ResenaDraft,
+  type NuevaHuecaDraft,
 } from './drafts'
 
 function makeDraft(overrides: Partial<ResenaDraft> = {}): ResenaDraft {
@@ -21,6 +23,13 @@ function makeDraft(overrides: Partial<ResenaDraft> = {}): ResenaDraft {
       ciudad: 'Quito',
       descripcion: '',
       coords: null,
+      barrio: '',
+      direccion: '',
+      plato_estrella: '',
+      precio: '$',
+      horario: '',
+      desde: null,
+      tags: [],
     },
     rating: 4,
     titulo: 'Un encebollado de otro nivel',
@@ -133,5 +142,60 @@ describe('drafts persistence', () => {
   it('loadDraft returns null for a corrupt payload instead of throwing', () => {
     localStorage.setItem(`${DRAFT_PREFIX}broken`, '{not json')
     expect(loadDraft('broken')).toBeNull()
+  })
+})
+
+describe('isNuevaHuecaValid (TASK-022)', () => {
+  function fullNueva(over: Partial<NuevaHuecaDraft> = {}): NuevaHuecaDraft {
+    return {
+      nombre: 'Encebollados Don Pepe',
+      ciudad: 'Manta',
+      barrio: 'Tarqui',
+      direccion: 'Av. 4 de Noviembre',
+      plato_estrella: 'Encebollado',
+      precio: '$$',
+      descripcion: 'rico',
+      coords: { lat: -1, lng: -80 },
+      horario: '8:00 - 14:00',
+      desde: 1990,
+      tags: ['mariscos'],
+      ...over,
+    }
+  }
+
+  it('returns true for a fully populated valid object', () => {
+    expect(isNuevaHuecaValid(fullNueva())).toBe(true)
+  })
+
+  it('returns true when only the optional fields are empty', () => {
+    expect(
+      isNuevaHuecaValid(fullNueva({ descripcion: '', horario: '', desde: null, tags: [], coords: null })),
+    ).toBe(true)
+  })
+
+  it('returns false when nombre is missing or whitespace', () => {
+    expect(isNuevaHuecaValid(fullNueva({ nombre: '' }))).toBe(false)
+    expect(isNuevaHuecaValid(fullNueva({ nombre: '   ' }))).toBe(false)
+  })
+
+  it('returns false when barrio is missing', () => {
+    expect(isNuevaHuecaValid(fullNueva({ barrio: '' }))).toBe(false)
+  })
+
+  it('returns false when direccion is missing', () => {
+    expect(isNuevaHuecaValid(fullNueva({ direccion: '  ' }))).toBe(false)
+  })
+
+  it('returns false when plato_estrella is missing', () => {
+    expect(isNuevaHuecaValid(fullNueva({ plato_estrella: '' }))).toBe(false)
+  })
+
+  it('returns false when ciudad is not a valid Ciudad', () => {
+    expect(isNuevaHuecaValid(fullNueva({ ciudad: 'Loja' as never }))).toBe(false)
+  })
+
+  it('returns false when precio is not a valid Precio', () => {
+    expect(isNuevaHuecaValid(fullNueva({ precio: '$$$$' as never }))).toBe(false)
+    expect(isNuevaHuecaValid(fullNueva({ precio: '' as never }))).toBe(false)
   })
 })

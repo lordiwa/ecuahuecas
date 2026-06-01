@@ -1,4 +1,4 @@
-import type { Ciudad } from '@/types/content'
+import { Ciudad, Precio, type Precio as PrecioType } from '@/types/content'
 import type { LngLat } from '@/lib/map'
 import type { Photo } from '@/components/PhotoUploader.vue'
 
@@ -28,6 +28,13 @@ export interface NuevaHuecaDraft {
   ciudad: Ciudad
   descripcion: string
   coords: LngLat | null
+  barrio: string
+  direccion: string
+  plato_estrella: string
+  precio: PrecioType
+  horario: string
+  desde: number | null
+  tags: string[]
 }
 
 /**
@@ -161,7 +168,19 @@ export function createEmptyDraft(id?: string): ResenaDraft {
     step: 1,
     huecaMode: 'existente',
     huecaId: null,
-    nuevaHueca: { nombre: '', ciudad: 'Quito', descripcion: '', coords: null },
+    nuevaHueca: {
+      nombre: '',
+      ciudad: 'Quito',
+      descripcion: '',
+      coords: null,
+      barrio: '',
+      direccion: '',
+      plato_estrella: '',
+      precio: '$',
+      horario: '',
+      desde: null,
+      tags: [],
+    },
     rating: 0,
     titulo: '',
     tagline: '',
@@ -170,6 +189,25 @@ export function createEmptyDraft(id?: string): ResenaDraft {
     photos: [],
     heroId: null,
   }
+}
+
+/**
+ * PURE guard: is a NEW-hueca draft complete enough to publish? Requires the core
+ * fields — nombre, ciudad, barrio, direccion, plato_estrella (non-empty trimmed)
+ * and a valid `precio` (`$`/`$$`/`$$$`). Optional fields (descripcion, coords,
+ * horario, desde, tags) are ignored. Used by both the wizard's next()/publish
+ * guards. Does not touch storage.
+ */
+export function isNuevaHuecaValid(d: NuevaHuecaDraft): boolean {
+  const nonEmpty = (s: unknown): boolean => typeof s === 'string' && s.trim().length > 0
+  return (
+    nonEmpty(d.nombre) &&
+    Ciudad.safeParse(d.ciudad).success &&
+    nonEmpty(d.barrio) &&
+    nonEmpty(d.direccion) &&
+    nonEmpty(d.plato_estrella) &&
+    Precio.safeParse(d.precio).success
+  )
 }
 
 /** Generate a temporary slug id for a new draft, e.g. `temp-l3k9x2a-4f8`. */

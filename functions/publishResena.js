@@ -216,6 +216,14 @@ export const publishResena = onCall(
         ciudad: data.ciudad,
         descripcion: data.descripcion,
         coords: data.coords,
+        barrio: data.barrio,
+        direccion: data.direccion,
+        plato_estrella: data.plato_estrella,
+        precio: data.precio,
+        horario: data.horario,
+        desde: data.desde,
+        tags: data.tags,
+        rating: Number(data.rating) || 0,
       })
       huecaId = resolved.huecaId
     } else {
