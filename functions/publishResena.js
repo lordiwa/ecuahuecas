@@ -34,6 +34,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { defineSecret, defineString } from 'firebase-functions/params'
 import { slugify, markdownToPortableText } from './lib/portableText.js'
+import { resolveNuevaHuecaId } from './lib/resolveHueca.js'
 
 // Sanity project coordinates are public identifiers (not secrets).
 const SANITY_PROJECT_ID = 'gvc4yjqj'
@@ -208,17 +209,15 @@ export const publishResena = onCall(
       if (!nombre) {
         throw new HttpsError('invalid-argument', 'Falta el nombre de la nueva hueca.')
       }
-      const huecaDoc = {
-        _type: 'hueca',
+      // Reuse an existing hueca with the same slug instead of creating a
+      // duplicate (see resolveNuevaHuecaId for the reuse-by-slug trade-off).
+      const resolved = await resolveNuevaHuecaId(sanity, {
         nombre,
-        slug: { _type: 'slug', current: slugify(nombre) },
-        ciudad: data.ciudad || undefined,
-        descripcion: data.descripcion || undefined,
-        coords: data.coords ? { lat: data.coords.lat, lng: data.coords.lng } : undefined,
-        activa: true,
-      }
-      const created = await sanity.create(huecaDoc, { autoGenerateArrayKeys: true })
-      huecaId = created._id
+        ciudad: data.ciudad,
+        descripcion: data.descripcion,
+        coords: data.coords,
+      })
+      huecaId = resolved.huecaId
     } else {
       const slug = String(data.huecaId || '').trim()
       huecaId = await sanity.fetch('*[_type=="hueca" && slug.current==$slug][0]._id', { slug })
