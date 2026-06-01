@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-01T04:00:01.663Z",
+  "generated_at": "2026-06-01T21:44:07.999Z",
   "tasks": [
     {
       "key": "TASK-006",
@@ -58,7 +58,7 @@
     {
       "key": "TASK-015",
       "title": "Fase 04 — Firebase Hosting deploy + GitHub Actions (cron de rebuild)",
-      "status": "in_review",
+      "status": "done",
       "priority": "medium"
     },
     {
