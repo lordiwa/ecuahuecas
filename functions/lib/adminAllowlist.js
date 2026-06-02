@@ -3,8 +3,8 @@
 //
 // This module is split into PURE, firebase-free helpers (unit-tested directly,
 // like portableText.js / resolveHueca.js) and dependency-injected logic. The IO
-// reader (`isAdminEmail`) lives in functions/index.js next to the Admin SDK so
-// this file stays importable in the vitest suite without firebase-admin.
+// reader (`isAdminEmail`) lives in functions/isAdminEmail.js next to the Admin
+// SDK so this file stays importable in the vitest suite without firebase-admin.
 
 /** Lowercase + trim a value to a string ('' for null/undefined). */
 function norm(v) {

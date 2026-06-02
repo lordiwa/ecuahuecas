@@ -68,13 +68,9 @@ onBeforeUnmount(() => {
   if (typeof document !== 'undefined') document.removeEventListener('click', onDocClick)
 })
 
-// Expose the admin link only in dev, or when ?admin=true is present — so it is
-// never statically rendered into production by accident. Guard `location` for
-// the SSG build (no `window` during module evaluation).
-const showAdmin =
-  import.meta.env.DEV ||
-  (typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).has('admin'))
+// Expose the admin link ONLY in dev — /admin is never discoverable from the
+// production nav (TASK-025). Admins reach it by typing /admin (or /login).
+const showAdmin = import.meta.env.DEV
 
 watchEffect(() => {
   if (typeof document !== 'undefined') {
