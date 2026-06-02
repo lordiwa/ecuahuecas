@@ -52,7 +52,18 @@ useHead(() => {
     </p>
 
     <div class="hueca-grid">
-      <Foto :seed="hueca.slug" :src="hueca.fotos[0] || undefined" :color="'#FFCB05'" aspect="4/3" />
+      <div v-if="hueca.fotos.length" class="hueca-galeria">
+        <img
+          v-for="(foto, i) in hueca.fotos"
+          :key="foto"
+          :src="foto"
+          alt=""
+          loading="lazy"
+          class="hueca-galeria__foto"
+          :class="{ 'hueca-galeria__foto--principal': i === 0 }"
+        />
+      </div>
+      <Foto v-else :seed="hueca.slug" :color="'#FFCB05'" aspect="4/3" />
       <dl class="hueca-datos">
         <div><dt>Plato estrella</dt><dd>{{ hueca.plato_estrella }}</dd></div>
         <div><dt>Dirección</dt><dd>{{ hueca.direccion }}</dd></div>
@@ -69,12 +80,17 @@ useHead(() => {
 
     <section v-if="resenas.length" class="hueca-resenas">
       <h2 class="h-titulo">Reseñas</h2>
-      <article v-for="r in resenas" :key="r.slug" class="card">
+      <RouterLink
+        v-for="r in resenas"
+        :key="r.slug"
+        :to="`/resenas/${r.slug}`"
+        class="card card--hover resena-card"
+      >
         <p class="eyebrow">{{ r.fecha }}</p>
         <h3 class="h-titulo">{{ r.titulo }}</h3>
         <p>{{ r.extracto }}</p>
         <Estrellas :value="r.rating" :size="14" />
-      </article>
+      </RouterLink>
     </section>
   </article>
 
@@ -100,6 +116,29 @@ useHead(() => {
 .hueca-datos dd { font-family: var(--titulo); font-size: 1.1rem; margin-top: 2px; }
 .hueca-desc { margin-top: 32px; }
 .hueca-tags { display: flex; gap: 8px; flex-wrap: wrap; list-style: none; padding: 0; margin-top: 24px; }
+
+.hueca-galeria {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+/* The first photo is prominent: it spans the full width of the gallery. */
+.hueca-galeria__foto {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border: var(--borde);
+  border-radius: var(--radio-md);
+  display: block;
+}
+.hueca-galeria__foto--principal {
+  grid-column: 1 / -1;
+  aspect-ratio: 16/9;
+}
+/* A single photo shouldn't leave a phantom second column. */
+.hueca-galeria:has(.hueca-galeria__foto:only-child) { grid-template-columns: 1fr; }
+
 .hueca-resenas { margin-top: 56px; display: grid; gap: 20px; }
-.hueca-resenas .card > * + * { margin-top: 8px; }
+.resena-card { text-decoration: none; color: inherit; display: block; }
+.resena-card > * + * { margin-top: 8px; }
 </style>
