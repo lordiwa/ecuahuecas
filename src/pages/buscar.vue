@@ -12,7 +12,7 @@ const ciudad = ref<'' | 'Quito' | 'Guayaquil' | 'Cuenca' | 'Manta'>('')
 
 const resultados = computed(() => {
   const needle = q.value.trim().toLowerCase()
-  return huecas.filter((h) => {
+  return huecas.value.filter((h) => {
     if (ciudad.value && h.ciudad !== ciudad.value) return false
     if (!needle) return true
     return (

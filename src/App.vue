@@ -3,6 +3,7 @@ import { ref, computed, watchEffect, onMounted, onBeforeUnmount } from 'vue'
 import { useHead } from '@unhead/vue'
 import { useAuth } from '@/composables/useAuth'
 import { absoluteUrl } from '@/lib/og'
+import { refreshContent } from '@/lib/content'
 
 // Site-wide DEFAULT head. unhead dedupes meta by name/property, so any per-page
 // `useHead` block (HuecaDetail, ResenaDetail, index…) OVERRIDES these. This
@@ -35,8 +36,15 @@ const theme = ref<'light' | 'dark'>('light')
 const { currentUser, initAuthListener, signOut } = useAuth()
 
 // Register the auth listener only in the browser (never during SSG prerender).
+// Also refresh public content LIVE from Sanity once on the client so edits made
+// in Sanity appear on reload WITHOUT a rebuild/deploy (TASK-027). The static
+// snapshot remains the SSR/prerender seed; this only hydrates over it. Tokenless
+// anonymous read — never during SSR.
 onMounted(() => {
-  if (typeof window !== 'undefined') initAuthListener()
+  if (typeof window !== 'undefined') {
+    initAuthListener()
+    void refreshContent()
+  }
 })
 
 const menuOpen = ref(false)

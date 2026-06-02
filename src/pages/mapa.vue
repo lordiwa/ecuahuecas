@@ -7,7 +7,7 @@ import MapaReal, { type MapHueca } from '@/components/MapaReal.vue'
 useHead({ title: 'Mapa — EcuaHuecas' })
 
 const conCoords = computed<MapHueca[]>(() =>
-  huecas
+  huecas.value
     .filter((h) => h.coords)
     .map((h) => ({
       slug: h.slug,

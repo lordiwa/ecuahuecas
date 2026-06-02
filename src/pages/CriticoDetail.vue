@@ -9,7 +9,7 @@ const route = useRoute()
 const slug = computed(() => String(route.params.slug))
 const critico = computed(() => getCritico(slug.value))
 const susResenas = computed(() =>
-  critico.value ? resenas.filter((r) => r.critico_id === critico.value!.slug) : [],
+  critico.value ? resenas.value.filter((r) => r.critico_id === critico.value!.slug) : [],
 )
 const tieneBio = computed(() => (critico.value?.bio?.length ?? 0) > 0)
 

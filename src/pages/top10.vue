@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useHead } from '@unhead/vue'
 import { huecasTop } from '@/lib/content'
 import Estrellas from '@/components/Estrellas.vue'
@@ -6,7 +7,8 @@ import PrecioDots from '@/components/PrecioDots.vue'
 
 useHead({ title: 'Top 10 huecas — EcuaHuecas' })
 
-const top = huecasTop(10)
+// Computed so the ranking re-evaluates after the live refresh (TASK-027).
+const top = computed(() => huecasTop(10))
 </script>
 
 <template>

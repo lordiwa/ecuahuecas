@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useHead } from '@unhead/vue'
 import { huecas, resenas, criticos, huecasTop } from '@/lib/content'
 import { absoluteUrl } from '@/lib/og'
@@ -23,9 +24,11 @@ useHead({
   ],
 })
 
-const destacada = huecasTop(1)[0]
-const recientes = resenas.slice(0, 6)
-const top = huecasTop(6)
+// Computed so they re-evaluate after refreshContent() swaps in live Sanity data
+// on the client (TASK-027). Non-reactive consts would freeze the snapshot seed.
+const destacada = computed(() => huecasTop(1)[0])
+const recientes = computed(() => resenas.value.slice(0, 6))
+const top = computed(() => huecasTop(6))
 </script>
 
 <template>

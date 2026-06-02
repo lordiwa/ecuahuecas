@@ -72,7 +72,7 @@ const savedAt = ref<string | null>(null)
 // Optional crítico selector — only shown when the snapshot carries críticos.
 // When unset the Cloud Function defaults to the first active crítico.
 const criticoSlug = ref<string>('')
-const hasCriticos = computed(() => criticos.length > 0)
+const hasCriticos = computed(() => criticos.value.length > 0)
 
 // AI draft generation (step 3) in-flight + error state.
 const generating = ref(false)
@@ -101,7 +101,7 @@ const tagsInput = computed<string>({
   },
 })
 
-const huecaActual = computed(() => huecas.find((h) => h.slug === huecaId.value) ?? null)
+const huecaActual = computed(() => huecas.value.find((h) => h.slug === huecaId.value) ?? null)
 
 const huecaNombreActual = computed(() =>
   huecaMode.value === 'nueva' ? nuevaHueca.nombre : (huecaActual.value?.nombre ?? ''),
