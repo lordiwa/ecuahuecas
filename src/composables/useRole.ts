@@ -1,48 +1,54 @@
-// Role composable — reactive custom-claim state derived from the current user.
+// Role composable — reactive admin state derived from the Firestore allowlist
+// via the `checkAdmin` Cloud Function (TASK-025). There are NO custom claims:
+// "admin" means the signed-in user's verified email is in config/admins, which
+// only the server can read. The client calls checkAdmin once per signed-in user
+// and caches the boolean reactively; the UI uses it to show/hide controls and
+// the router guard uses it to gate /admin/**.
 //
-// SSG SAFETY: nothing here touches Firebase at import time. Claims are read
-// from the User object (`getIdTokenResult`) only when `currentUser` changes,
-// which can only happen in the browser after the auth listener fires.
+// SSG SAFETY: nothing here touches Firebase at import time. checkAdmin (which
+// lazily inits Firebase) is only invoked when `currentUser` changes, which can
+// only happen in the browser after the auth listener fires.
 import { ref, computed, watch } from 'vue'
+import type { Ref } from 'vue'
+import type { User } from 'firebase/auth'
 import { useAuth } from './useAuth'
-import { deriveIsAdmin, deriveIsCritico, type RoleClaims } from './roleClaims'
+import { checkAdmin } from '@/lib/adminCheck'
 
-// Module-singleton claim state, shared app-wide (mirrors useAuth's pattern).
-const claims = ref<RoleClaims | null>(null)
+// Module-singleton state, shared app-wide (mirrors useAuth's pattern).
+const isAdminState = ref(false)
 let watcherRegistered = false
 
-const { currentUser } = useAuth()
+// Resolved lazily (inside ensureWatcher) so this module pulls useAuth's
+// reactive state only when first used, never at import-eval time.
+let currentUser: Ref<User | null> | null = null
 
 /**
- * Re-read the current user's custom claims. `force` triggers a server token
- * refresh first (`getIdToken(true)`) — required immediately after a role is
- * granted/revoked, since the cached ID token still carries the old claims.
+ * Re-derive `isAdmin` for the current user by calling the checkAdmin callable.
+ * No user → false (and no network call). Any error → false (fail closed).
  */
-async function refreshClaims(force = false): Promise<void> {
-  const user = currentUser.value
-  if (!user) {
-    claims.value = null
+async function refreshAdmin(): Promise<void> {
+  if (!currentUser?.value) {
+    isAdminState.value = false
     return
   }
   try {
-    if (force) await user.getIdToken(true)
-    const result = await user.getIdTokenResult()
-    claims.value = result.claims as RoleClaims
+    isAdminState.value = await checkAdmin()
   } catch {
-    // Network/token error — fail closed (no claims => no elevated access).
-    claims.value = null
+    // Network/permission error — fail closed (no admin access).
+    isAdminState.value = false
   }
 }
 
-/** Recompute claims whenever the signed-in user changes. Registered once. */
+/** Recompute whenever the signed-in user changes. Registered once. */
 function ensureWatcher(): void {
   if (watcherRegistered) return
   watcherRegistered = true
+  currentUser = useAuth().currentUser
   watch(
     currentUser,
     () => {
-      // Fire-and-forget; `claims` updates reactively when it resolves.
-      void refreshClaims(false)
+      // Fire-and-forget; `isAdmin` updates reactively when it resolves.
+      void refreshAdmin()
     },
     { immediate: true },
   )
@@ -51,10 +57,12 @@ function ensureWatcher(): void {
 export function useRole() {
   ensureWatcher()
   return {
-    claims,
-    isAdmin: computed(() => deriveIsAdmin(claims.value)),
-    isCritico: computed(() => deriveIsCritico(claims.value)),
-    /** Force a token refresh, then re-read claims. Use after granting a role. */
-    refreshClaims: () => refreshClaims(true),
+    isAdmin: computed(() => isAdminState.value),
+    /**
+     * Run a fresh admin check and await it. Used by the /admin route guard on a
+     * cold load, where the watcher's fire-and-forget refresh may not have
+     * resolved (or may have run while `currentUser` was still null).
+     */
+    refreshAdmin,
   }
 }

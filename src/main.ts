@@ -69,12 +69,6 @@ const routes = [
     meta: { title: 'EcuaHuecas — Admin: Editar reseña', admin: true },
   },
   {
-    path: '/admin/usuarios',
-    name: 'admin-usuarios',
-    component: () => import('./pages/admin/usuarios.vue'),
-    meta: { title: 'EcuaHuecas — Admin: Usuarios', admin: true, adminOnly: true },
-  },
-  {
     path: '/_dev/editor',
     name: 'dev-editor',
     component: () => import('./pages/_dev/editor.vue'),
@@ -127,25 +121,27 @@ export const createApp = ViteSSG(App, { routes }, ({ app, router, isClient }) =>
     }
 
     // Configured but no user: send to login and remember where they wanted to go
-    // (hardened same-site value so the redirect can't be abused).
+    // (hardened same-site value so the redirect can't be abused). /login is the
+    // sign-in path an admin reaches by typing /admin directly — there is no
+    // public "Ingresar" button in the nav (TASK-025).
     if (!currentUser.value) {
       return { path: '/login', query: { next: safeNextPath(to.fullPath) } }
     }
 
-    // Admin-only routes (e.g. /admin/usuarios) additionally require the admin
-    // claim. A logged-in non-admin (e.g. a crítico) must not reach them — send
-    // them to the reseñas dashboard rather than to /login.
-    if (to.meta.adminOnly) {
-      const { isAdmin, refreshClaims } = useRole()
-      // Claims may not have been read yet on a cold load; ensure they are.
-      if (!isAdmin.value) await refreshClaims()
-      if (!isAdmin.value) return { name: 'admin-resenas' }
-    }
+    // Signed in: admin status is the Firestore allowlist (config/admins), read
+    // server-side via the checkAdmin callable. A logged-in NON-admin must not
+    // reach any /admin/** route — bounce them to home (there is nothing for them
+    // here and no role to request anymore).
+    const { isAdmin, refreshAdmin } = useRole()
+    // On a cold load the watcher's check may not have resolved yet (or ran while
+    // currentUser was still null) — force a fresh check and await it.
+    await refreshAdmin()
+    if (!isAdmin.value) return { name: 'home' }
 
     return true
   })
 
-  // NOTE: the admin bootstrap is now done from the UI (the "Soy el administrador
-  // — activar mi cuenta" button on /admin/resenas) via the bootstrapAdmin
-  // callable, so the old dev-only `window.hacermeAdmin` console helper is gone.
+  // NOTE: admins are managed entirely from the Firebase console by editing the
+  // Firestore doc config/admins.emails (TASK-025). There is no in-app bootstrap
+  // button, no self-service role request, and no console helper.
 })

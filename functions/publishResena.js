@@ -1,6 +1,7 @@
 // EcuaHuecas publishing Cloud Functions (v2, us-central1).
 //
-// Two callables, both restricted to críticos/admins:
+// Two callables, both restricted to admins in the Firestore allowlist
+// (config/admins) — see assertCallerIsAdmin below:
 //   - generateResenaDraft: drafts a reseña body with Claude (forced tool call).
 //   - publishResena: writes a reseña (+ optional new hueca) to Sanity, uploading
 //     photos as image assets.
@@ -35,6 +36,8 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { defineSecret, defineString } from 'firebase-functions/params'
 import { slugify, markdownToPortableText } from './lib/portableText.js'
 import { resolveNuevaHuecaId } from './lib/resolveHueca.js'
+import { verifiedEmailFrom } from './lib/adminAllowlist.js'
+import { isAdminEmail } from './isAdminEmail.js'
 
 // Sanity project coordinates are public identifiers (not secrets).
 const SANITY_PROJECT_ID = 'gvc4yjqj'
@@ -50,16 +53,21 @@ const DEFAULT_MODEL = 'claude-haiku-4-5-20251001'
 const REGION = 'us-central1'
 
 /**
- * Throw unless the caller is authenticated AND holds `admin === true` or
- * `critico === true`. Mirrors the fail-closed guard style in index.js.
+ * Throw unless the caller is authenticated AND their VERIFIED email is in the
+ * Firestore admin allowlist (config/admins). No custom claims — the allowlist is
+ * the single source of truth (TASK-025). Fails closed:
+ *   - no auth                       → HttpsError('unauthenticated')  → HTTP 401
+ *   - verified email not in list /  → HttpsError('permission-denied')→ HTTP 403
+ *     unverified email
  */
-function assertCallerIsCriticoOrAdmin(request) {
+async function assertCallerIsAdmin(request) {
   const auth = request.auth
   if (!auth) {
     throw new HttpsError('unauthenticated', 'Debes iniciar sesión.')
   }
-  if (auth.token.admin !== true && auth.token.critico !== true) {
-    throw new HttpsError('permission-denied', 'Requiere ser crítico o administrador.')
+  // verifiedEmailFrom enforces email_verified before any allowlist lookup.
+  if (!verifiedEmailFrom(auth) || !(await isAdminEmail(verifiedEmailFrom(auth)))) {
+    throw new HttpsError('permission-denied', 'No estás autorizado.')
   }
   return auth
 }
@@ -114,7 +122,7 @@ export const generateResenaDraft = onCall(
   // defineSecret params. .value() still works at runtime.
   { region: REGION, secrets: [ANTHROPIC_API_KEY] },
   async (request) => {
-    assertCallerIsCriticoOrAdmin(request)
+    await assertCallerIsAdmin(request)
 
     const data = request.data || {}
     const huecaNombre = String(data.huecaNombre || '').trim()
@@ -197,7 +205,7 @@ export const publishResena = onCall(
   // defineSecret); .value() reads it from functions/.env at runtime.
   { region: REGION, secrets: [SANITY_WRITE_TOKEN, ANTHROPIC_API_KEY] },
   async (request) => {
-    assertCallerIsCriticoOrAdmin(request)
+    await assertCallerIsAdmin(request)
 
     const data = request.data || {}
     const sanity = await makeSanityClient()

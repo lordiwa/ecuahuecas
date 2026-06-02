@@ -108,9 +108,10 @@ function toggleTheme() {
         {{ theme === 'light' ? 'Oscuro' : 'Claro' }}
       </button>
 
-      <RouterLink v-if="!currentUser" to="/login" class="login-link">Entrar</RouterLink>
-
-      <div v-else class="user-menu">
+      <!-- No public "Ingresar" button (TASK-025): admins sign in by typing
+           /admin (the guard sends them to /login) or /login directly. The user
+           menu only appears once a user is signed in. -->
+      <div v-if="currentUser" class="user-menu">
         <button
           class="user-avatar"
           type="button"
@@ -207,10 +208,6 @@ function toggleTheme() {
 .app-nav a.admin-link {
   color: var(--azul);
   border-bottom: 2.5px solid var(--azul);
-}
-
-.login-link {
-  color: var(--rojo) !important;
 }
 
 .user-menu {

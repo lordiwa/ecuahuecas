@@ -23,11 +23,12 @@ import {
 import { useAuth } from '@/composables/useAuth'
 import { useRole } from '@/composables/useRole'
 
-// Role-gating: "Publicar" requires crítico/admin; "Guardar borrador" only needs
-// authentication. The /admin guard normally prevents unauthenticated access, so
-// the unauthenticated UI here is just a graceful fallback for transient states.
+// Role-gating: "Generar con IA" / "Publicar" require admin (Firestore allowlist);
+// "Guardar borrador" only needs authentication. The /admin guard normally
+// prevents non-admin access, so this gating is defense in depth plus a graceful
+// fallback while the admin check is in flight.
 const { isAuthenticated } = useAuth()
-const { isCritico } = useRole()
+const { isAdmin } = useRole()
 
 // Keep TipTap (and its bundle) out of the main chunk: only loaded under /admin.
 const RichTextEditor = defineAsyncComponent(() => import('@/components/RichTextEditor.vue'))
@@ -377,7 +378,7 @@ function backToList() {
     <section v-show="step === 3" class="wizard-step">
       <h2 class="wizard-h">3 · La reseña</h2>
 
-      <div v-if="isCritico" class="ai-row">
+      <div v-if="isAdmin" class="ai-row">
         <button type="button" class="btn btn--azul" :disabled="generating" @click="onGenerar">
           {{ generating ? 'Generando…' : '✨ Generar con IA' }}
         </button>
@@ -415,7 +416,7 @@ function backToList() {
         @update:model-value="onPhotos"
       />
 
-      <div v-if="hasCriticos && isCritico" class="field critico-field">
+      <div v-if="hasCriticos && isAdmin" class="field critico-field">
         <label class="field-label" for="critico-select">Crítico (opcional)</label>
         <select id="critico-select" v-model="criticoSlug" class="input">
           <option value="">Por defecto (primer crítico activo)</option>
@@ -444,9 +445,9 @@ function backToList() {
         <template v-if="isAuthenticated">
           <!-- Any authenticated user may save a draft. -->
           <button type="button" class="btn btn--blanco" @click="onGuardar">Guardar borrador</button>
-          <!-- Publishing is reserved for críticos and admins. -->
+          <!-- Publishing is reserved for admins (Firestore allowlist). -->
           <button
-            v-if="isCritico"
+            v-if="isAdmin"
             type="button"
             class="btn btn--rojo"
             :disabled="publishing"

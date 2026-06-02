@@ -1,0 +1,23 @@
+rules_version = '2';
+
+// EcuaHuecas Firestore security rules (TASK-025).
+//
+// The ONLY Firestore data today is the admin allowlist at config/admins. It is
+// read and written exclusively by Cloud Functions via the Admin SDK, which
+// BYPASSES these rules. Therefore every client (browser) path is denied: there
+// is no legitimate client-side read or write of config/**, and we never want a
+// signed-in non-admin to enumerate the allowlist. Admins edit config/admins from
+// the Firebase console (also privileged, also bypasses rules).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // config/** — admin allowlist. No client access whatsoever.
+    match /config/{document=**} {
+      allow read, write: if false;
+    }
+
+    // Default deny for any other collection a future change might add.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

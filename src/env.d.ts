@@ -30,10 +30,9 @@ declare module 'vue-router' {
   interface RouteMeta {
     /** Page title set by the app. */
     title?: string
-    /** Requires an authenticated user (auth gate). */
+    /** Guarded /admin/** route: requires a signed-in user who is in the
+     *  Firestore admin allowlist (checked via the checkAdmin callable). */
     admin?: boolean
-    /** Additionally requires the `admin` custom claim (not just any user). */
-    adminOnly?: boolean
     /** Dev-only playground route (excluded from prod prerender). */
     dev?: boolean
   }
