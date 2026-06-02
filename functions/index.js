@@ -31,6 +31,11 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { defineString } from 'firebase-functions/params'
 import { initializeApp } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
+import {
+  alreadyHasCriticoAccess,
+  requestedClaims,
+  grantedCriticoClaims,
+} from './lib/roleClaims.js'
 
 initializeApp()
 
@@ -70,6 +75,39 @@ export const bootstrapAdmin = onCall(async (request) => {
   await getAuth().setCustomUserClaims(auth.uid, { admin: true })
 
   return { ok: true, uid: auth.uid, admin: true }
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SELF-SERVICE CRÍTICO REQUEST (TASK-024)
+//
+// requestCriticoRole: any AUTHENTICATED user can flag themselves as wanting the
+// crítico role. It grants NO privilege — it only merges `criticoRequested: true`
+// onto the CALLER'S OWN claims so an admin sees the request in /admin/usuarios.
+// No-op (and `already: true`) if the caller is already crítico or admin.
+//
+// GEN2 GOTCHA (see publishResena.js): an unauthenticated HTTP call must return
+// 401, which `throw new HttpsError('unauthenticated', …)` produces here.
+//
+// DEPLOY (user's step — needs `firebase login` + Blaze):
+//   firebase deploy --only functions:requestCriticoRole
+// ─────────────────────────────────────────────────────────────────────────────
+export const requestCriticoRole = onCall(async (request) => {
+  const auth = request.auth
+  if (!auth) {
+    throw new HttpsError('unauthenticated', 'Debes iniciar sesión.')
+  }
+
+  // Amicable no-op if they already hold (or out-rank) the crítico role: setting
+  // the request flag would be noise an admin then has to dismiss.
+  if (alreadyHasCriticoAccess(auth.token)) {
+    return { ok: true, already: true }
+  }
+
+  // Merge so we never clobber other claims; grants nothing, only marks intent.
+  const claims = await existingClaims(auth.uid)
+  await getAuth().setCustomUserClaims(auth.uid, requestedClaims(claims))
+
+  return { ok: true, requested: true }
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -127,9 +165,10 @@ export const grantCriticoRole = onCall(async (request) => {
   assertCallerIsAdmin(request)
   const uid = requireUid(request.data)
 
-  // Merge so we preserve any other claims (e.g. admin).
+  // Merge so we preserve any other claims (e.g. admin) and clear the
+  // now-satisfied self-service request marker (criticoRequested).
   const claims = await existingClaims(uid)
-  await getAuth().setCustomUserClaims(uid, { ...claims, critico: true })
+  await getAuth().setCustomUserClaims(uid, grantedCriticoClaims(claims))
 
   return { ok: true, uid, critico: true }
 })
@@ -160,6 +199,7 @@ export const listCriticos = onCall(async (request) => {
       photoURL: u.photoURL || null,
       admin: claims.admin === true,
       critico: claims.critico === true,
+      criticoRequested: claims.criticoRequested === true,
     }
   })
 

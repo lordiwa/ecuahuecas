@@ -4,12 +4,56 @@ import { useRouter } from 'vue-router'
 import { listDrafts, deleteDraft, type ResenaDraftSummary } from '@/lib/drafts'
 import { getHueca } from '@/lib/content'
 import Estrellas from '@/components/Estrellas.vue'
+import { useRole } from '@/composables/useRole'
+import { requestCriticoRole, bootstrapAdmin } from '@/lib/adminUsers'
+import { authErrorMessage } from '@/composables/authErrors'
 
 const router = useRouter()
 const drafts = ref<ResenaDraftSummary[]>([])
 
+// Role-gating UI (TASK-024): a signed-in user WITHOUT the crítico role still
+// reaches this page (the guard only requires auth, not crítico). Show a clear
+// activation card so the very first admin and new críticos never need the
+// browser console. This must work in PRODUCTION — no import.meta.env.DEV gate.
+const { isCritico, refreshClaims } = useRole()
+
+const adminBusy = ref(false)
+const adminError = ref<string | null>(null)
+
+const criticoBusy = ref(false)
+const criticoError = ref<string | null>(null)
+// 'idle' | 'sent' (request stored) | 'already' (was already crítico/admin)
+const criticoState = ref<'idle' | 'sent' | 'already'>('idle')
+
 function refresh() {
   drafts.value = listDrafts()
+}
+
+async function activarAdmin() {
+  adminBusy.value = true
+  adminError.value = null
+  try {
+    await bootstrapAdmin()
+    // Refresh claims so isCritico flips and the publish UI appears immediately.
+    await refreshClaims()
+  } catch (err) {
+    adminError.value = authErrorMessage(err)
+  } finally {
+    adminBusy.value = false
+  }
+}
+
+async function solicitarCritico() {
+  criticoBusy.value = true
+  criticoError.value = null
+  try {
+    const res = await requestCriticoRole()
+    criticoState.value = res.already ? 'already' : 'sent'
+  } catch (err) {
+    criticoError.value = authErrorMessage(err)
+  } finally {
+    criticoBusy.value = false
+  }
 }
 
 onMounted(refresh)
@@ -47,6 +91,48 @@ function descartar(d: ResenaDraftSummary) {
       </div>
       <RouterLink class="btn btn--rojo" :to="{ name: 'admin-resena-nueva' }">+ Nueva reseña</RouterLink>
     </div>
+
+    <!-- Role-gating card: shown to signed-in users who can't publish yet. -->
+    <section v-if="!isCritico" class="card gate">
+      <h2 class="gate-title">Aún no puedes publicar</h2>
+      <p class="cuerpo-editorial gate-sub">
+        Solo los críticos pueden publicar reseñas. Si eres el dueño del sitio,
+        activa tu cuenta de administrador. Si quieres colaborar, solicita el
+        acceso de crítico y un administrador lo revisará.
+      </p>
+
+      <div class="gate-actions">
+        <div class="gate-block">
+          <button
+            type="button"
+            class="btn btn--rojo"
+            :disabled="adminBusy"
+            @click="activarAdmin"
+          >
+            {{ adminBusy ? 'Activando…' : 'Soy el administrador — activar mi cuenta' }}
+          </button>
+          <p v-if="adminError" class="msg msg--error" role="alert">{{ adminError }}</p>
+        </div>
+
+        <div class="gate-block">
+          <button
+            type="button"
+            class="btn btn--azul"
+            :disabled="criticoBusy || criticoState !== 'idle'"
+            @click="solicitarCritico"
+          >
+            {{ criticoBusy ? 'Enviando…' : 'Solicitar acceso de crítico' }}
+          </button>
+          <p v-if="criticoState === 'sent'" class="msg gate-ok" role="status">
+            Solicitud enviada, un administrador la revisará.
+          </p>
+          <p v-else-if="criticoState === 'already'" class="msg gate-ok" role="status">
+            Ya tienes acceso de crítico. Refresca la página si no ves el botón de publicar.
+          </p>
+          <p v-if="criticoError" class="msg msg--error" role="alert">{{ criticoError }}</p>
+        </div>
+      </div>
+    </section>
 
     <p v-if="drafts.length === 0" class="empty">
       No hay borradores guardados todavía. Empieza una reseña y pulsa
@@ -87,6 +173,49 @@ function descartar(d: ResenaDraftSummary) {
   border-radius: var(--radio-md);
   background: var(--crema);
   padding: 24px;
+}
+.gate {
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.gate-title {
+  font-family: var(--titulo);
+  font-size: 1.4rem;
+  margin: 0 0 8px;
+}
+.gate-sub {
+  margin: 0 0 18px;
+  max-width: 60ch;
+  opacity: 0.85;
+}
+.gate-actions {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.gate-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 240px;
+}
+.msg {
+  font-family: var(--texto);
+  border: var(--borde);
+  border-radius: var(--radio-md);
+  background: var(--crema);
+  padding: 12px 14px;
+  margin: 0;
+}
+.msg--error {
+  color: var(--crema);
+  background: var(--rojo);
+  font-weight: 700;
+  box-shadow: var(--sombra-bloque-sm);
+}
+.gate-ok {
+  background: var(--amarillo);
+  font-weight: 700;
 }
 .draft-list {
   list-style: none;

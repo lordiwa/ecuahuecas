@@ -10,6 +10,7 @@ import {
   listCriticos,
   grantCriticoRole,
   revokeCriticoRole,
+  sortByRequestThenName,
   type AdminUser,
 } from '@/lib/adminUsers'
 import { authErrorMessage } from '@/composables/authErrors'
@@ -24,7 +25,8 @@ async function refresh() {
   loading.value = true
   error.value = null
   try {
-    users.value = await listCriticos()
+    // Surface pending crítico requesters first so an admin sees them at a glance.
+    users.value = sortByRequestThenName(await listCriticos())
   } catch (err) {
     error.value = authErrorMessage(err)
   } finally {
@@ -101,6 +103,10 @@ function displayName(u: AdminUser): string {
           <div class="user-roles">
             <span v-if="u.admin" class="chip chip--rojo">admin</span>
             <span v-if="u.critico" class="chip chip--azul">crítico</span>
+            <span
+              v-if="u.criticoRequested && !u.critico && !u.admin"
+              class="chip chip--amarillo"
+            >solicitó acceso</span>
             <span v-if="!u.admin && !u.critico" class="chip">sin rol</span>
           </div>
         </div>
