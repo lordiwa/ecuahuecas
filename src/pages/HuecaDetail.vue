@@ -59,7 +59,7 @@ useHead(() => {
           :src="foto"
           alt=""
           loading="lazy"
-          class="hueca-galeria__foto"
+          class="hueca-galeria__foto hueca-galeria__foto--natural"
           :class="{ 'hueca-galeria__foto--principal': i === 0 }"
         />
       </div>
@@ -122,18 +122,22 @@ useHead(() => {
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
-/* The first photo is prominent: it spans the full width of the gallery. */
-.hueca-galeria__foto {
+/*
+ * TASK-028: real uploaded photos render at their NATURAL proportions — full
+ * width, auto height, no fixed aspect-ratio box and no object-fit:cover. This
+ * shows the WHOLE photo (no zoom/crop) instead of the cover fit added in
+ * TASK-026. Border/radius/gap are preserved.
+ */
+.hueca-galeria__foto--natural {
   width: 100%;
-  aspect-ratio: 4/3;
-  object-fit: cover;
+  height: auto;
+  display: block;
   border: var(--borde);
   border-radius: var(--radio-md);
-  display: block;
 }
+/* The first photo is prominent: it spans the full width of the gallery. */
 .hueca-galeria__foto--principal {
   grid-column: 1 / -1;
-  aspect-ratio: 16/9;
 }
 /* A single photo shouldn't leave a phantom second column. */
 .hueca-galeria:has(.hueca-galeria__foto:only-child) { grid-template-columns: 1fr; }

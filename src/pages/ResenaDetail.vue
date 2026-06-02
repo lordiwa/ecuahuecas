@@ -57,7 +57,20 @@ useHead(() => {
       <span v-if="hueca">· en <RouterLink :to="`/huecas/${hueca.slug}`">{{ hueca.nombre }}</RouterLink></span>
     </p>
 
-    <Foto :seed="resena.slug" :src="resena.imagen || undefined" :color="'#E8833A'" aspect="16/9" class="resena-hero" />
+    <!--
+      TASK-028: the real uploaded hero photo shows at its NATURAL proportions
+      (no crop/zoom). Render it as a plain image element so Foto's cover-crop
+      box never applies; fall back to the branded Foto placeholder when there is
+      no image (the placeholder keeps its decorative 16/9 box).
+    -->
+    <img
+      v-if="resena.imagen"
+      :src="resena.imagen"
+      alt=""
+      loading="lazy"
+      class="resena-hero resena-hero--natural"
+    />
+    <Foto v-else :seed="resena.slug" :color="'#E8833A'" aspect="16/9" class="resena-hero" />
 
     <div class="resena-body cuerpo-editorial">
       <BlogPostPreview
@@ -100,6 +113,14 @@ useHead(() => {
 .mono-meta { font-family: var(--mono); font-size: 13px; }
 .resena-meta a { color: var(--rojo); font-weight: 700; }
 .resena-hero { margin: 32px 0; }
+/* Real hero photo at natural proportions: full width, intrinsic height, no crop. */
+.resena-hero--natural {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: var(--borde);
+  border-radius: var(--radio-md);
+}
 .resena-body { font-size: 1.25rem; line-height: 1.7; }
 .resena-body :deep(p) { margin-block: 1em; }
 .resena-body :deep(h2),
