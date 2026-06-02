@@ -117,7 +117,7 @@ const top = huecasTop(6)
   <section v-if="!huecas.length" class="container section empty-state">
     <p class="eyebrow">Atención</p>
     <h2 class="h-titulo">Aún no hay huecas cargadas.</h2>
-    <p>Agrega un .md en <code>src/content/huecas/</code>.</p>
+    <p>Aún no hay huecas publicadas.</p>
   </section>
 </template>
 

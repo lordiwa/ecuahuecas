@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { imagetools } from 'vite-imagetools'
 import { fileURLToPath, URL } from 'node:url'
-import { readdirSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 interface SnapshotRow { slug?: string }
@@ -17,7 +17,7 @@ interface ContentSnapshotFile {
  * (`src/content-snapshot.json`) — the current source of truth. `build` runs
  * the snapshot script before `vite-ssg build`, so the JSON exists when this
  * config loads. Returns null when the snapshot is absent (e.g. `dev` before a
- * first `npm run snapshot`) so the caller falls back to the markdown glob.
+ * first `npm run snapshot`), in which case no detail routes are prerendered.
  */
 function slugsFromSnapshot(): { huecas: string[]; resenas: string[]; criticos: string[] } | null {
   try {
@@ -28,18 +28,6 @@ function slugsFromSnapshot(): { huecas: string[]; resenas: string[]; criticos: s
     return { huecas: pick(data.huecas), resenas: pick(data.resenas), criticos: pick(data.criticos) }
   } catch {
     return null
-  }
-}
-
-/** Fallback: derive slugs from the legacy markdown seed (used only when the
- * snapshot is missing, e.g. during `dev`). Can be dropped once the seed is. */
-function listSlugs(dir: string): string[] {
-  try {
-    return readdirSync(resolve(__dirname, dir))
-      .filter((f) => f.endsWith('.md'))
-      .map((f) => f.replace(/\.md$/, ''))
-  } catch {
-    return []
   }
 }
 
@@ -63,13 +51,13 @@ export default defineConfig({
     formatting: 'minify',
     crittersOptions: false,
     includedRoutes(paths: string[]) {
-      // Prefer the Sanity snapshot (source of truth); fall back to the markdown
-      // seed only when no snapshot exists. This decouples prerendering from the
-      // obsolete markdown seed so it can be deleted later.
+      // Slugs come from the Sanity snapshot (the single source of truth). When
+      // no snapshot exists (e.g. `dev` before a first `npm run snapshot`) we
+      // prerender no detail routes rather than crashing.
       const snap = slugsFromSnapshot()
-      const huecaSlugs = snap ? snap.huecas : listSlugs('src/content/huecas')
-      const resenaSlugs = snap ? snap.resenas : listSlugs('src/content/resenas')
-      const criticoSlugs = snap ? snap.criticos : listSlugs('src/content/criticos')
+      const huecaSlugs = snap ? snap.huecas : []
+      const resenaSlugs = snap ? snap.resenas : []
+      const criticoSlugs = snap ? snap.criticos : []
       const huecas = huecaSlugs.map((s) => `/huecas/${s}`)
       const resenas = resenaSlugs.map((s) => `/resenas/${s}`)
       const criticos = criticoSlugs.map((s) => `/criticos/${s}`)
