@@ -1,8 +1,27 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, it, expect, vi } from 'vitest'
 import { createSSRApp, h } from 'vue'
 import { renderToString } from '@vue/server-renderer'
 import { RouterLink as RouterLinkStub } from 'vue-router'
 import type { Hueca, Resena } from '@/types/content'
+
+// Read the SFC's raw <style> block so we can assert the scoped CSS for the
+// natural-image class never re-introduces the cover crop (the TASK-028 bug).
+const HuecaDetailSource = readFileSync(
+  resolve(process.cwd(), 'src/pages/HuecaDetail.vue'),
+  'utf8',
+)
+
+/** Pull the body of a single CSS rule (`selector { ... }`) from a stylesheet. */
+function extractRule(css: string, selector: string): string | null {
+  const start = css.indexOf(selector)
+  if (start === -1) return null
+  const open = css.indexOf('{', start)
+  const close = css.indexOf('}', open)
+  if (open === -1 || close === -1) return null
+  return css.slice(open + 1, close)
+}
 
 /**
  * Render contract for the public hueca page (TASK-026). Two reported bugs:
@@ -126,6 +145,27 @@ describe('HuecaDetail gallery', () => {
     expect(html).not.toContain('<img')
     expect(html).not.toContain('src="undefined"')
     expect(html).toContain(PLACEHOLDER_SVG)
+  })
+
+  // TASK-028: real gallery photos must show at NATURAL proportions, not the
+  // cropped/zoomed cover box from TASK-026. We assert via the marker class the
+  // template introduces for natural images; the scoped CSS for that class must
+  // not declare object-fit:cover nor a fixed aspect-ratio.
+  it('renders real gallery photos at natural proportions (no cover crop)', async () => {
+    state.hueca = baseHueca({ fotos: [F1, F2] })
+    state.resenas = []
+    const html = await render()
+
+    // The gallery <img>s carry the natural marker class.
+    expect(html).toContain('hueca-galeria__foto--natural')
+
+    // The component's compiled scoped <style> must not crop the natural class.
+    const css = HuecaDetailSource
+    const naturalRule = extractRule(css, '.hueca-galeria__foto--natural')
+    expect(naturalRule).toBeTruthy()
+    expect(naturalRule).not.toMatch(/object-fit\s*:\s*cover/)
+    expect(naturalRule).not.toMatch(/aspect-ratio/)
+    expect(naturalRule).toMatch(/height\s*:\s*auto/)
   })
 })
 
