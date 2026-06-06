@@ -6,6 +6,7 @@ import {
   deleteDraft,
   stripPhotoBlobs,
   isNuevaHuecaValid,
+  createEmptyDraft,
   DRAFT_PREFIX,
   type ResenaDraft,
   type NuevaHuecaDraft,
@@ -36,6 +37,7 @@ function makeDraft(overrides: Partial<ResenaDraft> = {}): ResenaDraft {
     tagline: 'Caldo concentrado, atún fresco',
     body: '## Lo bueno\n\nEl caldo estaba humeante.',
     veredicto: 'Vale la pena el viaje.',
+    instruccionesIA: 'Destaca el caldo y el ambiente familiar.',
     photos: [
       {
         id: 'p1',
@@ -75,6 +77,25 @@ describe('drafts persistence', () => {
     expect(loaded?.veredicto).toBe('Vale la pena el viaje.')
     expect(loaded?.huecaId).toBe('el-rincon')
     expect(loaded?.heroId).toBe('p1')
+  })
+
+  it('round-trips the AI-only instruccionesIA guide through save/load (TASK-029)', () => {
+    const draft = makeDraft({ instruccionesIA: 'Menciona que abre temprano.' })
+    saveDraft(draft)
+    const loaded = loadDraft(draft.id)
+    expect(loaded?.instruccionesIA).toBe('Menciona que abre temprano.')
+  })
+
+  it('loads a legacy draft missing instruccionesIA without crashing (TASK-029 compat)', () => {
+    // Simulate a draft persisted before the field existed: no `instruccionesIA`.
+    const draft = makeDraft()
+    const { instruccionesIA: _omit, ...legacy } = draft
+    void _omit
+    localStorage.setItem(`${DRAFT_PREFIX}${draft.id}`, JSON.stringify(legacy))
+    const loaded = loadDraft(draft.id)
+    expect(loaded).not.toBeNull()
+    // The field is simply absent (undefined); the wizard seeds it to '' on load.
+    expect(loaded?.instruccionesIA ?? '').toBe('')
   })
 
   it('strips photo blobs on save but keeps sha256 + url metadata (criterion #2)', () => {
@@ -142,6 +163,21 @@ describe('drafts persistence', () => {
   it('loadDraft returns null for a corrupt payload instead of throwing', () => {
     localStorage.setItem(`${DRAFT_PREFIX}broken`, '{not json')
     expect(loadDraft('broken')).toBeNull()
+  })
+})
+
+describe('createEmptyDraft (TASK-029)', () => {
+  it('seeds instruccionesIA as an empty string', () => {
+    const draft = createEmptyDraft()
+    expect(draft.instruccionesIA).toBe('')
+  })
+
+  it('round-trips a fresh empty draft through save/load including instruccionesIA', () => {
+    localStorage.clear()
+    const draft = createEmptyDraft('temp-empty')
+    saveDraft(draft)
+    const loaded = loadDraft('temp-empty')
+    expect(loaded?.instruccionesIA).toBe('')
   })
 })
 
