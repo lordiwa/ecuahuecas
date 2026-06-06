@@ -55,6 +55,12 @@ export interface ResenaDraft {
   /** Markdown body produced by RichTextEditor. */
   body: string
   veredicto: string
+  /**
+   * Private guide for the AI: free-text the critic writes to steer
+   * "Generar con IA" (sent as `notas`). It is NEVER published — unlike
+   * `veredicto`, which is the closing blockquote shown to readers.
+   */
+  instruccionesIA: string
   /** Photos minus their blobs once persisted; in-memory drafts may carry blobs. */
   photos: DraftPhotoInMemory[]
   heroId: string | null
@@ -186,6 +192,7 @@ export function createEmptyDraft(id?: string): ResenaDraft {
     tagline: '',
     body: '',
     veredicto: '',
+    instruccionesIA: '',
     photos: [],
     heroId: null,
   }

@@ -55,6 +55,9 @@ const titulo = ref(props.initial.titulo)
 const tagline = ref(props.initial.tagline)
 const body = ref(props.initial.body)
 const veredicto = ref(props.initial.veredicto)
+// Private guide fed to the AI as `notas` (NOT published). Backward-compat:
+// drafts saved before this field existed won't carry it → treat as ''.
+const instruccionesIA = ref(props.initial.instruccionesIA ?? '')
 // PhotoUploader works with Photo[] (which require a blob). Seeded draft photos
 // reloaded from localStorage have no live blob — their `blob:` URLs are dead and
 // would render as broken thumbnails. Drop those on seed; remember whether the
@@ -129,6 +132,7 @@ function buildDraft(): ResenaDraft {
     tagline: tagline.value,
     body: body.value,
     veredicto: veredicto.value,
+    instruccionesIA: instruccionesIA.value,
     photos: photos.value,
     heroId: heroId.value,
   }
@@ -158,7 +162,7 @@ async function onGenerar() {
       huecaNombre: huecaNombreActual.value,
       ciudad: String(ciudadActual.value || ''),
       rating: rating.value,
-      notas: veredicto.value,
+      notas: instruccionesIA.value,
       tagline: tagline.value,
     })
     titulo.value = out.titulo || titulo.value
@@ -266,7 +270,7 @@ onBeforeUnmount(() => {
 })
 
 // Reset the "saved" indicator whenever the user edits something.
-watch([titulo, tagline, body, veredicto, rating, huecaId, huecaMode], () => {
+watch([titulo, tagline, body, veredicto, instruccionesIA, rating, huecaId, huecaMode], () => {
   savedAt.value = null
 })
 
@@ -378,11 +382,23 @@ function backToList() {
     <section v-show="step === 3" class="wizard-step">
       <h2 class="wizard-h">3 · La reseña</h2>
 
+      <div v-if="isAdmin" class="field">
+        <label class="field-label" for="instrucciones-ia">Indicaciones / referencias para la IA</label>
+        <textarea
+          id="instrucciones-ia"
+          v-model="instruccionesIA"
+          class="input"
+          rows="4"
+          placeholder="Ej: destaca el caldo humeante, el ambiente familiar y que abre temprano…"
+        ></textarea>
+        <p class="hint">Cuéntale a la IA qué destacar; lo lee al generar. No se publica.</p>
+      </div>
+
       <div v-if="isAdmin" class="ai-row">
         <button type="button" class="btn btn--azul" :disabled="generating" @click="onGenerar">
           {{ generating ? 'Generando…' : '✨ Generar con IA' }}
         </button>
-        <span class="hint">Usa tus notas del veredicto y la calificación.</span>
+        <span class="hint">Usa tus indicaciones para la IA y la calificación.</span>
       </div>
       <p v-if="generateError" class="warn">{{ generateError }}</p>
 
