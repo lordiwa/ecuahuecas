@@ -36,7 +36,9 @@ function makeDraft(overrides: Partial<ResenaDraft> = {}): ResenaDraft {
     titulo: 'Un encebollado de otro nivel',
     tagline: 'Caldo concentrado, atún fresco',
     body: '## Lo bueno\n\nEl caldo estaba humeante.',
-    veredicto: 'Vale la pena el viaje.',
+    veredictoAFavor: 'Caldo concentrado\nAtún fresco',
+    veredictoEnContra: 'Local pequeño',
+    veredictoTicket: '$3.50',
     instruccionesIA: 'Destaca el caldo y el ambiente familiar.',
     photos: [
       {
@@ -74,7 +76,9 @@ describe('drafts persistence', () => {
     expect(loaded?.titulo).toBe('Un encebollado de otro nivel')
     expect(loaded?.tagline).toBe('Caldo concentrado, atún fresco')
     expect(loaded?.body).toContain('El caldo estaba humeante.')
-    expect(loaded?.veredicto).toBe('Vale la pena el viaje.')
+    expect(loaded?.veredictoAFavor).toBe('Caldo concentrado\nAtún fresco')
+    expect(loaded?.veredictoEnContra).toBe('Local pequeño')
+    expect(loaded?.veredictoTicket).toBe('$3.50')
     expect(loaded?.huecaId).toBe('el-rincon')
     expect(loaded?.heroId).toBe('p1')
   })
@@ -96,6 +100,24 @@ describe('drafts persistence', () => {
     expect(loaded).not.toBeNull()
     // The field is simply absent (undefined); the wizard seeds it to '' on load.
     expect(loaded?.instruccionesIA ?? '').toBe('')
+  })
+
+  it('loads a legacy draft with a free-text veredicto without crashing (TASK-032 compat)', () => {
+    // Simulate a draft persisted before the structured veredicto split: it carries
+    // the old free-text `veredicto` string and lacks the 3 new fields. loadDraft
+    // must not crash, and the new fields read as empty (the wizard seeds with ?? '').
+    const draft = makeDraft()
+    const { veredictoAFavor: _a, veredictoEnContra: _b, veredictoTicket: _c, ...rest } = draft
+    void _a
+    void _b
+    void _c
+    const legacy = { ...rest, veredicto: 'Vale la pena el viaje.' }
+    localStorage.setItem(`${DRAFT_PREFIX}${draft.id}`, JSON.stringify(legacy))
+    const loaded = loadDraft(draft.id)
+    expect(loaded).not.toBeNull()
+    expect(loaded?.veredictoAFavor ?? '').toBe('')
+    expect(loaded?.veredictoEnContra ?? '').toBe('')
+    expect(loaded?.veredictoTicket ?? '').toBe('')
   })
 
   it('strips photo blobs on save but keeps sha256 + url metadata (criterion #2)', () => {
@@ -178,6 +200,29 @@ describe('createEmptyDraft (TASK-029)', () => {
     saveDraft(draft)
     const loaded = loadDraft('temp-empty')
     expect(loaded?.instruccionesIA).toBe('')
+  })
+})
+
+describe('createEmptyDraft structured veredicto (TASK-032)', () => {
+  it('seeds the 3 veredicto fields as empty strings and has no legacy `veredicto`', () => {
+    const draft = createEmptyDraft()
+    expect(draft.veredictoAFavor).toBe('')
+    expect(draft.veredictoEnContra).toBe('')
+    expect(draft.veredictoTicket).toBe('')
+    expect('veredicto' in draft).toBe(false)
+  })
+
+  it('round-trips the 3 veredicto fields through save/load', () => {
+    localStorage.clear()
+    const draft = createEmptyDraft('temp-ver')
+    draft.veredictoAFavor = 'Caldo concentrado\nAtún fresco'
+    draft.veredictoEnContra = 'Local pequeño'
+    draft.veredictoTicket = '$3.50'
+    saveDraft(draft)
+    const loaded = loadDraft('temp-ver')
+    expect(loaded?.veredictoAFavor).toBe('Caldo concentrado\nAtún fresco')
+    expect(loaded?.veredictoEnContra).toBe('Local pequeño')
+    expect(loaded?.veredictoTicket).toBe('$3.50')
   })
 })
 

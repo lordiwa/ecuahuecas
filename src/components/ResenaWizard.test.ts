@@ -100,7 +100,9 @@ function seed(overrides: Partial<ResenaDraft> = {}): ResenaDraft {
       precio: '$$',
     },
     rating: 4,
-    veredicto: 'VEREDICTO PUBLICADO: vale la pena el viaje.',
+    veredictoAFavor: 'Caldo concentrado\nAtún fresco',
+    veredictoEnContra: 'Local pequeño',
+    veredictoTicket: '$3.50',
     instruccionesIA: 'GUIA IA: destaca el caldo humeante y el ambiente familiar.',
     ...overrides,
   }
@@ -120,6 +122,7 @@ beforeEach(() => {
   h.photosToPublishInputs.mockReset()
   h.buildPublishPhotos.mockReset()
   h.generateResenaDraft.mockResolvedValue({ titulo: 'T', extracto: 'E', bodyMarkdown: 'B' })
+  vi.spyOn(window, 'confirm').mockReturnValue(true)
   h.publishResena.mockResolvedValue({ ok: true, resenaId: 'r', slug: 's', huecaId: 'hue', criticoSlug: null })
   h.photosToPublishInputs.mockResolvedValue([])
   h.buildPublishPhotos.mockReturnValue([])
@@ -161,10 +164,94 @@ describe('ResenaWizard step 3 — Generar con IA (TASK-029)', () => {
 
     expect(h.publishResena).toHaveBeenCalledTimes(1)
     const payload = h.publishResena.mock.calls[0][0] as Record<string, unknown>
-    // The published veredicto still flows through…
-    expect(payload.veredicto).toBe('VEREDICTO PUBLICADO: vale la pena el viaje.')
+    // The published veredicto still flows through, now as a structured object…
+    expect(payload.veredicto).toEqual({
+      aFavor: ['Caldo concentrado', 'Atún fresco'],
+      enContra: ['Local pequeño'],
+      ticket: '$3.50',
+    })
     // …but the private AI guide must NOT appear anywhere in the payload.
     expect('instruccionesIA' in payload).toBe(false)
     expect(JSON.stringify(payload)).not.toContain('GUIA IA:')
+  })
+})
+
+describe('ResenaWizard step 3 — structured veredicto (TASK-032)', () => {
+  function findTextarea(labelRe: RegExp): HTMLTextAreaElement | null {
+    const labels = Array.from(container.querySelectorAll('label'))
+    const label = labels.find((l) => labelRe.test(l.textContent ?? ''))
+    if (!label) return null
+    const forId = label.getAttribute('for')
+    if (forId) {
+      const el = container.querySelector(`#${forId}`)
+      if (el instanceof HTMLTextAreaElement) return el
+    }
+    return null
+  }
+  function findInput(labelRe: RegExp): HTMLInputElement | null {
+    const labels = Array.from(container.querySelectorAll('label'))
+    const label = labels.find((l) => labelRe.test(l.textContent ?? ''))
+    if (!label) return null
+    const forId = label.getAttribute('for')
+    if (forId) {
+      const el = container.querySelector(`#${forId}`)
+      if (el instanceof HTMLInputElement) return el
+    }
+    return null
+  }
+
+  it('renders the 3 structured veredicto inputs and drops the old free-text textarea', () => {
+    mount(seed())
+    expect(container.textContent).toMatch(/A favor/i)
+    expect(container.textContent).toMatch(/En contra/i)
+    expect(container.textContent).toMatch(/Ticket/i)
+    // The legacy single "Veredicto" textarea (#veredicto) must be gone.
+    expect(container.querySelector('#veredicto')).toBeNull()
+    // Three editable controls, seeded from the draft.
+    expect(findTextarea(/A favor/i)?.value).toContain('Caldo concentrado')
+    expect(findTextarea(/En contra/i)?.value).toContain('Local pequeño')
+    expect(findInput(/Ticket/i)?.value).toBe('$3.50')
+  })
+
+  it('onGenerar maps the AI aFavor/enContra/ticket into the three fields', async () => {
+    h.generateResenaDraft.mockResolvedValue({
+      titulo: 'T',
+      extracto: 'E',
+      bodyMarkdown: 'B',
+      aFavor: ['Porciones generosas', 'Caldo humeante'],
+      enContra: ['Cola larga'],
+      ticket: '$4.00',
+    })
+    mount(seed({ veredictoAFavor: '', veredictoEnContra: '', veredictoTicket: '' }))
+    generarButton().click()
+    await flushPromises()
+
+    expect(findTextarea(/A favor/i)?.value).toBe('Porciones generosas\nCaldo humeante')
+    expect(findTextarea(/En contra/i)?.value).toBe('Cola larga')
+    expect(findInput(/Ticket/i)?.value).toBe('$4.00')
+  })
+
+  it('onPublicar sends a structured veredicto object with empties dropped (not a string)', async () => {
+    mount(
+      seed({
+        veredictoAFavor: 'Caldo concentrado\n\n  Atún fresco  \n',
+        veredictoEnContra: '  Local pequeño  \n',
+        veredictoTicket: '  $3.50  ',
+      }),
+    )
+    const publicar = Array.from(container.querySelectorAll('button')).find((b) =>
+      /Publicar/i.test(b.textContent ?? ''),
+    ) as HTMLButtonElement
+    publicar.click()
+    await flushPromises()
+
+    expect(h.publishResena).toHaveBeenCalledTimes(1)
+    const payload = h.publishResena.mock.calls[0][0] as Record<string, unknown>
+    expect(typeof payload.veredicto).not.toBe('string')
+    expect(payload.veredicto).toEqual({
+      aFavor: ['Caldo concentrado', 'Atún fresco'],
+      enContra: ['Local pequeño'],
+      ticket: '$3.50',
+    })
   })
 })
