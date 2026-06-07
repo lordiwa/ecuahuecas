@@ -1,0 +1,36 @@
+{
+  "key": "TASK-028",
+  "title": "Fotos recortadas: mostrar imagen completa (proporción natural) en detalle de hueca y reseña",
+  "description": "El usuario reporta que las fotos salen 'zoomeadas, cortando la imagen' en el post. Causa: las imágenes reales se muestran con object-fit: cover dentro de un recuadro de proporción fija, que recorta/zoomea para llenar.\n\nDónde pasa:\n- src/pages/HuecaDetail.vue: la galería (.hueca-galeria__foto, de TASK-026) usa aspect-ratio 4/3 (y 16/9 en --principal) + object-fit: cover.\n- src/pages/ResenaDetail.vue: la foto principal de la reseña usa <Foto :src=resena.imagen aspect=16/9 class=resena-hero>, y src/components/Foto.vue aplica object-fit: cover a la <img>.\n\nObjetivo: en las PÁGINAS DE DETALLE (hueca y reseña = 'el post'), las fotos REALES subidas deben verse COMPLETAS, a su proporción natural, SIN recorte ni zoom. Cuando NO hay imagen, conservar el placeholder SVG decorativo actual (ese sí puede mantener su recuadro). NO cambiar el recorte 'cover' de las miniaturas/tarjetas del home ni del hero del index (ahí el cover uniforme es intencional para una grilla prolija).\n\nEnfoque sugerido (a criterio del developer, limpio y mínimo):\n- Galería de la hueca: mostrar cada foto con width:100%, height:auto, display:block (sin aspect-ratio fijo ni object-fit:cover) para respetar la proporción natural; conservar borde/radio. La primera foto puede seguir a ancho completo. Cuando hueca.fotos está vacío, sigue el <Foto> placeholder.\n- Foto principal de la reseña: cuando hay resena.imagen, renderizar la imagen real a proporción natural (no recortada); cuando no hay, mantener el <Foto> placeholder (puede quedar 16/9). Una opción es añadir a Foto.vue un modo opt-in (p.ej. prop fit='cover'|'contain' o 'natural') que NO recorte, y usarlo solo aquí; o renderizar la <img> natural directamente en ResenaDetail y dejar Foto solo para el placeholder. Evitar romper los usos existentes de Foto (que deben seguir en 'cover' por defecto).\n\nTDD: test de render que verifique que en HuecaDetail/ResenaDetail las imágenes reales NO usan object-fit:cover / no están encajonadas a proporción fija (o que el modo natural se aplica), y que el placeholder se conserva cuando no hay imagen. Ajustar tests existentes si aplica. npm test + typecheck verdes. Sin tocar markup/estilos del home. Luego build + /deploy-website (con lectura en vivo ya activa, igual conviene rebuild para refrescar el prerender).",
+  "acceptance_criteria": [
+    "En la página de detalle de la HUECA, las fotos reales de la galería se muestran COMPLETAS a proporción natural (sin object-fit:cover ni recuadro de proporción fija que recorte); se conserva el placeholder cuando no hay fotos",
+    "En la página de detalle de la RESEÑA ('el post'), la foto principal (resena.imagen) se muestra completa a proporción natural, sin recorte/zoom; cuando no hay imagen se mantiene el placeholder",
+    "Los usos de Foto en miniaturas/tarjetas del home y el hero del index siguen con object-fit:cover (no se tocan); cualquier cambio a Foto.vue es opt-in y no altera el comportamiento por defecto",
+    "Test(s) de render que verifican el no-recorte en las páginas de detalle y la conservación del placeholder; npm test y npm run typecheck limpios",
+    "Tras build+deploy, las fotos de https://ecuahuecas.web.app/huecas/kim-s-chicken y de la reseña se ven completas (sin cortar)"
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "phase-02",
+    "frontend",
+    "ux",
+    "reader-pages"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-026"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-02T22:49:54.422Z",
+      "body": "DONE & DEPLOYED 2026-06-02. developer TDD commits 7335ca6 (tests) + 2c0f3e6 (impl); 107 tests + typecheck green; orchestrator self-reviewed (presentational; diff = only HuecaDetail.vue + ResenaDetail.vue, Foto.vue and home untouched). Detail-page real photos now render at NATURAL proportions (width:100%;height:auto, no object-fit:cover / fixed aspect) so nothing is cropped/zoomed; SVG placeholder kept for the no-image case; home thumbnails/hero keep cover (intentional). Built + deployed hosting."
+    }
+  ],
+  "created_at": "2026-06-02T22:43:11.929Z",
+  "updated_at": "2026-06-02T22:49:54.422Z",
+  "jira_key": null
+}

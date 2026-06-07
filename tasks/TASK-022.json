@@ -1,0 +1,33 @@
+{
+  "key": "TASK-022",
+  "title": "Wizard: crear hueca nueva con TODOS los campos (precio, barrio, etc.) + validación obligatoria",
+  "description": "Cuando se publica una reseña para una hueca NUEVA (huecaMode='nueva'), el wizard hoy solo captura nombre/ciudad/descripción/coords. Debe capturar todos los campos del schema hueca y exigir los del núcleo antes de publicar (forzar crear la hueca completa si no existe). Plan: C:\\\\Users\\\\srpar\\\\.claude\\\\plans\\\\ahora-el-sitio-debria-zany-platypus.md (Change A). Archivos: src/lib/drafts.ts (extender NuevaHuecaDraft + isNuevaHuecaValid), src/components/ResenaWizard.vue (inputs barrio/direccion/plato_estrella texto, precio radio estilo .mode-switch, horario/desde opcionales, tags input por comas; validación que bloquea next()/onPublicar), src/lib/publish.ts (PublishResenaPayload), functions/publishResena.js (pasar campos + rating), functions/lib/resolveHueca.js (escribir todos los campos en create + rating=reseña, reviews=1; reuse verbatim). rating/reviews derivados de la reseña (no input). TDD: extender functions/lib/resolveHueca.test.ts y src/lib/publish.test.ts. Requiere redeploy de functions.",
+  "acceptance_criteria": [
+    "NuevaHuecaDraft incluye barrio, direccion, plato_estrella, precio, horario, desde, tags (además de nombre/ciudad/descripcion/coords) con defaults sensatos",
+    "El Paso 1 del wizard (modo nueva hueca) tiene inputs para todos esos campos, reutilizando estilos .field/.input/.card y el patrón radio para precio",
+    "No se puede avanzar de Paso 1 ni Publicar si faltan los obligatorios: nombre, ciudad, barrio, direccion, plato_estrella, precio (muestra error tipo .warn)",
+    "publishResena/resolveNuevaHuecaId escriben TODOS los campos al crear la hueca, con rating=rating de la reseña y reviews=1; el camino de reuse-por-slug no sobrescribe",
+    "Tests extendidos (resolveHueca.test.ts + publish/drafts) verdes; npm test y typecheck limpios",
+    "Functions redeployadas (Node 22, --account rmatovelle84@gmail.com --project ecuahuecas) y verificadas; publicar una hueca nueva con todos los campos la crea completa y aparece en el snapshot tras rebuild"
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "phase-02",
+    "frontend",
+    "cloud-function",
+    "sanity",
+    "wizard"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-013",
+    "TASK-021"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-01T22:35:07.572Z",
+  "updated_at": "2026-06-02T02:41:50.382Z",
+  "jira_key": null
+}

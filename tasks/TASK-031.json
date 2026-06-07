@@ -1,0 +1,42 @@
+{
+  "key": "TASK-031",
+  "title": "Enriquecer la página de reseña: ficha 'Dónde comer' + ficha del crítico + galería de fotos",
+  "description": "La página de reseña (src/pages/ResenaDetail.vue) muestra muy poco: fecha · crítico (solo nombre), título, estrellas + link a la hueca, foto principal, cuerpo y un recuadro de veredicto (que hoy casi nunca tiene datos — eso se aborda aparte en TASK-032). Los datos de hueca y crítico YA están disponibles vía getHueca()/getCritico() pero no se muestran. Esta tarea es SOLO FRONTEND (sin tocar Cloud Functions ni el wizard).\n\nMejoras (elegidas por el usuario):\n\n1) FICHA 'DÓNDE COMER' (tarjeta de la hueca): mostrar, a partir de `hueca` (ya cargada en ResenaDetail), una tarjeta con: plato_estrella, precio (usar <PrecioDots :value=hueca.precio/>, ver HuecaDetail.vue), dirección, barrio, ciudad y horario. Incluir acciones: un botón 'Cómo llegar' que abra Google Maps en pestaña nueva SOLO si hueca.coords existe → href `https://www.google.com/maps/dir/?api=1&destination=<lat>,<lng>` (target=_blank rel=noopener); y un RouterLink 'Ver hueca' a `/huecas/<hueca.slug>`. No embeber MapLibre aquí (peso del bundle); basta el link a Google Maps. Si no hay hueca (resena.hueca_id no resuelve), omitir la ficha sin romper.\n\n2) FICHA DEL CRÍTICO (autor): reemplazar el simple 'por {nombre}' por un byline con: avatar (si critico.avatar existe, <img>; si no, usar <Foto :seed=critico.slug/> como placeholder, redondo), nombre como RouterLink a `/criticos/<critico.slug>`, y especialidad (critico.especialidad) si existe. Mantenerlo compacto y elegante. No es necesario renderizar la bio PortableText completa (link al perfil basta). Conservar la fecha. Si no hay crítico, degradar a '—' como hoy.\n\n3) GALERÍA DE FOTOS: mostrar hueca.fotos como galería en la reseña (reutilizar el patrón/estilos de la galería natural de HuecaDetail.vue: .hueca-galeria con object natural width:100%/height:auto, primera foto a ancho completo). Ubicarla en la ficha 'Dónde comer' o justo después del cuerpo. OJO: la foto principal de la reseña (resena.imagen) ya se muestra arriba como hero; la galería son las fotos de la hueca (hueca.fotos). Si hueca.fotos está vacío, no mostrar galería (no usar placeholder aquí). Evitar duplicar el hero si coincidiera con una foto de la hueca (si es trivial dedupe por URL; si no, aceptable mostrarlas).\n\nLayout sugerido (a criterio del developer, limpio y coherente con el estilo editorial existente): hero → byline del crítico cerca del título → cuerpo → ficha 'Dónde comer' (con datos + galería + acciones) → veredicto (sin cambios). Se pueden extraer subcomponentes pequeños (p.ej. CriticoByline.vue, HuecaInfoCard.vue) o inline; a discreción. Reutilizar componentes existentes: PrecioDots, Estrellas, Foto.\n\nTDD: tests de render que verifiquen: (a) se muestran dirección/plato_estrella/precio/horario de la hueca; (b) 'Cómo llegar' aparece con el href de Google Maps cuando hay coords y NO aparece cuando no hay coords; (c) el byline del crítico muestra nombre enlazado a /criticos/<slug> y avatar/placeholder; (d) la galería renderiza N imágenes cuando hueca.fotos tiene N, y no renderiza galería cuando está vacío; (e) degradación cuando falta hueca o crítico. npm test + typecheck verdes, sin romper tests existentes.\n\nDespués (orquestador): npm run build + /deploy-website.",
+  "acceptance_criteria": [
+    "La reseña muestra una ficha 'Dónde comer' con plato estrella, precio (PrecioDots), dirección, barrio/ciudad y horario tomados de la hueca",
+    "Botón 'Cómo llegar' a Google Maps (destination=lat,lng, target _blank) visible SOLO cuando hueca.coords existe; además un enlace 'Ver hueca' a /huecas/<slug>",
+    "El autor se muestra como byline con avatar (o placeholder Foto) + nombre enlazado a /criticos/<slug> + especialidad, en vez de solo el nombre",
+    "Se muestra una galería con todas las fotos de la hueca (hueca.fotos) a proporción natural; si no hay fotos, no se muestra galería (sin placeholder)",
+    "Degradación correcta cuando falta la hueca o el crítico (no rompe el render)",
+    "Tests de render para ficha de hueca, byline del crítico, galería y el condicional de 'Cómo llegar'; npm test y npm run typecheck limpios",
+    "Tras build+deploy, la reseña Kuro Sushi en https://ecuahuecas.web.app muestra las tres mejoras"
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "phase-02",
+    "frontend",
+    "reader-pages",
+    "ux"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-026",
+    "TASK-027"
+  ],
+  "linked_commits": [
+    "53e0540",
+    "487d807"
+  ],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-06T02:10:00.000Z",
+      "body": "DONE & DEPLOYED 2026-06-06. developer TDD commits 53e0540 (tests) + 487d807 (impl); 129 tests + typecheck green; frontend-only (ResenaDetail.vue + test, inlined byline/card/gallery). Reseña now shows: crítico byline (avatar/placeholder + name link to /criticos/<slug> + especialidad), 'Dónde comer' card (plato_estrella, PrecioDots, dirección, barrio/ciudad, horario, 'Cómo llegar' Google Maps link when coords + 'Ver hueca' link), and the hueca photo gallery (natural proportions, deduped vs hero). Built + deployed hosting."
+    }
+  ],
+  "created_at": "2026-06-06T00:00:00.000Z",
+  "updated_at": "2026-06-06T02:10:00.000Z",
+  "jira_key": null
+}

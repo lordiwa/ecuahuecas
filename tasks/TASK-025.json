@@ -1,0 +1,42 @@
+{
+  "key": "TASK-025",
+  "title": "Simplificar auth a allowlist de admins en Firestore (quitar rol crítico, ocultar /admin y botón Ingresar)",
+  "description": "El usuario quiere drásticamente más simple: los admins son SÓLO los correos que él agrega manualmente en un documento de Firestore (config/admins), administrable desde la consola sin redeploy. Si tu correo (verificado) está en la lista eres admin y SIEMPRE ves los botones de publicar; si no, no. Se elimina por completo el rol 'crítico' de permisos, la página /admin/usuarios, y TODAS las functions de roles. Se oculta /admin (sin enlace en el sitio) y se quita el botón público 'Ingresar' (los admins entran escribiendo la URL /admin o /login). La seguridad real vive en el servidor (las functions revisan la allowlist), el cliente sólo muestra/oculta.\n\nESTO REEMPLAZA TASK-024 (revertir su modelo): borrar el bootstrap-button, las solicitudes self-service, los claims criticoRequested, etc.\n\nACLARACIÓN IMPORTANTE: NO tocar el 'critico' de CONTENIDO en Sanity (el doc critico rafael-el-mato que firma las reseñas). Eso es la firma/autor del artículo, NO un rol de login. Sólo se elimina el rol de PERMISOS 'critico'.\n\nDISEÑO:\nBACKEND (functions/, requiere Firestore + redeploy + PRUNE de las viejas):\n- Añadir Firestore (firebase-admin/firestore). Doc config/admins con campo emails: string[] (lowercased). Sembrar rmatovelle84@gmail.com para no quedar bloqueados.\n- Helper puro/IO mínimo isAdminEmail(email): lee config/admins y compara en minúsculas; false si el doc no existe o email vacío. Factor la parte comparable a vitest sin firebase (p.ej. emailInList(email, list) puro) + la lectura de Firestore aparte.\n- publishResena + generateResenaDraft: autorizar por (auth && auth.token.email_verified && isAdminEmail(auth.token.email)). QUITAR el chequeo de claim critico/admin. Lanzar permission-denied si no está en la lista, unauthenticated si no hay auth.\n- NUEVA callable checkAdmin (autenticada): devuelve { admin: boolean } leyendo la allowlist para el correo del caller. El cliente la usa para mostrar/ocultar botones y proteger la ruta. (curl sin auth => 401.)\n- ELIMINAR del código y del deploy (prune con --force): bootstrapAdmin, requestCriticoRole, grantCriticoRole, revokeCriticoRole, listCriticos. Borrar functions/lib/roleClaims.js + su test. Quitar ADMIN_EMAIL defineString si ya no se usa (o dejar como fallback inicial de la allowlist; documentarlo).\n- Reglas Firestore (firestore.rules + firebase.json): denegar TODO acceso de cliente a config/** (las functions usan Admin SDK y saltan las reglas). Añadir el bloque firestore a firebase.json.\n\nFRONTEND (src/):\n- useRole.ts / roleClaims.ts: reemplazar la lógica basada en claims por una llamada a checkAdmin tras login; exponer isAdmin reactivo. Eliminar isCritico y todo lo de criticoRequested.\n- ResenaWizard.vue: los botones 'Generar con IA'/'Publicar' se gatean por isAdmin (no isCritico).\n- src/pages/admin/resenas/index.vue: ELIMINAR la tarjeta de gating de TASK-024 (botones activar-admin/solicitar). Un no-admin simplemente no entra (lo bloquea el guard).\n- main.ts: el guard de /admin/** exige sesión + isAdmin (vía checkAdmin); si no, redirigir a home (NO a /login, porque quitamos el botón). Quitar cualquier resto de hacermeAdmin (ya removido en TASK-024).\n- ELIMINAR la página src/pages/admin/usuarios.vue + su ruta + src/lib/adminUsers.ts (y sus tests).\n- Quitar el botón/enlace público 'Ingresar' del header/nav (localizarlo con grep) y asegurar que /admin no esté enlazado en ninguna nav. /login sigue accesible por URL para que un admin inicie sesión.\n\nTDD primero: tests de emailInList puro (membresía, case-insensitive, lista vacía/ausente), autorización de checkAdmin y de publishResena/generateResenaDraft por email; tests frontend de isAdmin vía checkAdmin (mock). Borrar/ajustar tests que referencian adminUsers/roleClaims. npm test + typecheck limpios.\n\nDEPLOY (orquestador+humano): puede requerir crear la base de datos Firestore una vez (gcloud firestore databases create / consola, cuenta rmatovelle84) — verificar primero. Sembrar config/admins. Deploy functions con prune de las viejas (--force) + firestore rules; verificar checkAdmin curl 401 y que publishResena sigue 401 sin auth. npm run build + /deploy-website. UAT: admin entra por /admin (sin botón Ingresar público), ve los botones y publica; un correo fuera de la lista no.",
+  "acceptance_criteria": [
+    "Existe la allowlist en Firestore (config/admins.emails: string[], lowercased) sembrada con rmatovelle84@gmail.com; las reglas Firestore niegan todo acceso de cliente a config/** (sólo Admin SDK lee)",
+    "publishResena y generateResenaDraft autorizan SÓLO por correo verificado presente en la allowlist (sin claims); permission-denied si no está, unauthenticated sin auth; siguen devolviendo 401 a curl sin auth",
+    "Nueva callable checkAdmin (autenticada) devuelve {admin:boolean} según la allowlist; curl sin auth => 401",
+    "Eliminadas del código Y del proyecto desplegado (prune): bootstrapAdmin, requestCriticoRole, grantCriticoRole, revokeCriticoRole, listCriticos; borrados functions/lib/roleClaims.js, src/lib/adminUsers.ts, src/pages/admin/usuarios.vue + su ruta y todos sus tests",
+    "Frontend: isAdmin se deriva de checkAdmin; los botones del wizard y el acceso a /admin/** se gatean por isAdmin; un admin SIEMPRE ve los botones; el concepto 'crítico' de permisos ya no existe (no se toca el critico de CONTENIDO en Sanity)",
+    "El sitio público ya no muestra el botón/enlace 'Ingresar' ni enlaza a /admin; /login sigue accesible por URL; el guard de /admin redirige a home a quien no sea admin",
+    "Tests nuevos escritos primero y verdes (emailInList puro, authz de checkAdmin/publish, isAdmin frontend); npm test y npm run typecheck limpios",
+    "Desplegado: Firestore (db + rules + doc sembrado), functions con prune de las 5 viejas + checkAdmin nueva (curl 401), sitio reconstruido+desplegado. UAT: el admin entra por /admin directo y publica; un correo fuera de la lista no ve botones ni puede publicar"
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "phase-02",
+    "frontend",
+    "cloud-function",
+    "auth",
+    "firestore",
+    "ux",
+    "simplification"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-024"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-02T18:33:37.700Z",
+      "body": "DONE & DEPLOYED 2026-06-02. developer TDD commits 6d60448 (tests) + 4619c59 (impl) + d5f9050 (LOW cleanups); orchestrator fixed deploy-functions SKILL.md (subagent perm-denied on .claude/skills). 92 tests + typecheck green; reviewer PASS WITH NITS (no HIGH/MEDIUM; server-side authz traced, fails closed, requires email_verified). Human created Firestore DB + doc config/admins{emails:['rmatovelle84@gmail.com']} in console. Deployed (rmatovelle84/ecuahuecas): firestore:rules released; functions --force => checkAdmin CREATED, generateResenaDraft+publishResena UPDATED, 5 old role fns DELETED (bootstrapAdmin/requestCriticoRole/grantCriticoRole/revokeCriticoRole/listCriticos); curl no-auth => checkAdmin 401 + publishResena 401. Site rebuilt + hosting deployed: home 200, NO public Ingresar button, /login + /admin reachable by URL. New auth model LIVE: admins = emails in Firestore config/admins; client checkAdmin shows/hides; server re-checks verified email in allowlist. Remaining = human UAT (log in at /admin, confirm buttons appear + publish works; a non-listed email must NOT). Deploy quirk persists: firebase fn discovery flaky on Windows ('No function matches') — retry with --debug."
+    }
+  ],
+  "created_at": "2026-06-02T16:15:41.078Z",
+  "updated_at": "2026-06-02T18:33:37.700Z",
+  "jira_key": null
+}

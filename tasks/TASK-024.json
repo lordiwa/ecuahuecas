@@ -1,0 +1,41 @@
+{
+  "key": "TASK-024",
+  "title": "Roles a prueba de tontos: botón \"Activar admin\" en el sitio + solicitud self-service de crítico (sin consola)",
+  "description": "Hoy el único modo de mintear el primer admin es correr `await hacermeAdmin()` en la consola del navegador, y ese helper sólo existe en DEV (import.meta.env.DEV en src/main.ts) — en producción NO hay forma. Además no hay vía self-service para que un usuario nuevo pida el rol de crítico (sólo un admin puede promoverlo en /admin/usuarios, y un admin sólo nace con el truco de consola). El usuario pidió: (1) botón \"Hacerme admin\" visible en el sitio (también en prod), (2) que un usuario pueda solicitar el rol de crítico desde la app y el admin lo apruebe, y (3) que TODO sea a prueba de tontos — cero consola.\n\nDISEÑO (sin Firestore nuevo; reusa Firebase Auth custom claims + el listUsers que ya hace listCriticos):\n\nBACKEND (functions/, requiere redeploy Node22 us-central1 --account rmatovelle84@gmail.com --project ecuahuecas):\n- bootstrapAdmin: SIN cambios (ya es seguro: sólo le da {admin:true} a quien coincida con ADMIN_EMAIL y tenga email_verified). Sólo se expondrá vía UI.\n- NUEVA callable requestCriticoRole (functions/index.js): autenticada; hace merge de { criticoRequested: true } en los PROPIOS claims del caller. No otorga ningún privilegio (sólo marca una solicitud). No-op amable si el caller ya es critico o admin (devuelve {ok:true, already:true}). unauthenticated si no hay auth. Sigue el patrón GEN2 (curl sin auth => 401).\n- listCriticos: añadir criticoRequested:(claims.criticoRequested===true) a cada usuario devuelto.\n- grantCriticoRole: al promover, limpiar el flag criticoRequested (merge { ...claims, critico:true } sin criticoRequested) preservando admin.\n\nFRONTEND (src/):\n- src/main.ts: ELIMINAR el helper dev-only window.hacermeAdmin y su console.info (queda reemplazado por la UI). bootstrapAdmin callable permanece.\n- src/lib/adminUsers.ts: añadir wrappers requestCriticoRole() y bootstrapAdmin(); extender AdminUser con criticoRequested.\n- src/composables/roleClaims.ts / useRole.ts: exponer lo necesario (no hace falta derivar criticoRequested para el dueño; basta el estado local tras la llamada).\n- /admin (dashboard del wizard): cuando el usuario logueado NO es isCritico, mostrar una tarjeta clara \"Aún no puedes publicar\" con DOS acciones (reusar .btn/.card/.msg y authErrorMessage):\n  (a) \"Soy el administrador — activar mi cuenta\": llama bootstrapAdmin; éxito => refreshClaims() y la UI se actualiza; error => mensaje amable (el server responde \"No estás autorizado\" a quien no sea ADMIN_EMAIL). Visible también en prod; a prueba de tontos: cualquiera puede tocarlo, sólo el correo correcto tiene éxito.\n  (b) \"Solicitar acceso de crítico\": llama requestCriticoRole; éxito => \"Solicitud enviada, un administrador la revisará\"; estado pendiente claro.\n- /admin/usuarios: mostrar chip \"solicitó acceso\" para usuarios con criticoRequested (idealmente ordenarlos primero); el botón existente \"Promover a crítico\" aprueba y limpia el flag.\n\nTDD primero (developer): tests de functions para requestCriticoRole (setea claim propio, no-op si ya critico/admin, requiere auth), listCriticos devuelve criticoRequested, grantCriticoRole limpia el flag; tests frontend para los wrappers nuevos en adminUsers y la lógica de gating. npm test + typecheck limpios. Luego implementación.\n\nDEPLOY: redeploy functions (requestCriticoRole nueva + grant/list cambiadas), verificar curl 401 en requestCriticoRole; npm run build + /deploy-website.\n\nPlan de referencia previo: C:\\\\Users\\\\srpar\\\\.claude\\\\plans\\\\ahora-el-sitio-debria-zany-platypus.md. Desbloquea además a TASK-023 (publicar una reseña real ya no necesitará consola).",
+  "acceptance_criteria": [
+    "Nueva Cloud Function requestCriticoRole: autenticada, hace merge de {criticoRequested:true} en los claims del PROPIO caller, no-op amable si ya es critico/admin, lanza unauthenticated sin auth; desplegada Node22 us-central1 y curl sin auth devuelve 401",
+    "listCriticos devuelve criticoRequested por usuario; grantCriticoRole limpia criticoRequested al promover preservando el claim admin",
+    "src/main.ts ya NO define window.hacermeAdmin ni el console.info dev-only; la única vía de bootstrap es el botón en la UI (bootstrapAdmin callable intacta)",
+    "En /admin, un usuario logueado SIN rol ve una tarjeta con botón 'Soy el administrador — activar mi cuenta' (llama bootstrapAdmin; éxito refresca claims y habilita publicar; error muestra mensaje amable) y botón 'Solicitar acceso de crítico' (llama requestCriticoRole; muestra estado enviado/pendiente). Funciona en producción, cero consola",
+    "/admin/usuarios muestra un chip 'solicitó acceso' para usuarios con criticoRequested y el botón 'Promover a crítico' los aprueba limpiando el flag",
+    "Tests nuevos (functions + frontend) escritos primero y verdes; npm test y npm run typecheck limpios",
+    "Functions redeployadas y sitio reconstruido+desplegado (/deploy-website). Verificación end-to-end a prueba de tontos: el dueño se activa como admin desde el botón (sin consola) y un usuario nuevo solicita crítico, el admin lo aprueba en /admin/usuarios y tras refrescar puede publicar"
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "phase-02",
+    "frontend",
+    "cloud-function",
+    "auth",
+    "roles",
+    "ux"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-012",
+    "TASK-013"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-02T15:56:04.988Z",
+      "body": "DONE & DEPLOYED. developer TDD commits 1411112 (tests) + 949deec (impl), 100 tests green + typecheck clean; reviewer PASS (no HIGH/MEDIUM). Deployed Node22 us-central1 --account rmatovelle84 --project ecuahuecas: requestCriticoRole CREATED (curl no-auth => 401 {\"status\":\"UNAUTHENTICATED\"} = reachable, allUsers invoker OK), grantCriticoRole + listCriticos UPDATED. Website rebuilt (npm run build, [vite-ssg] Build finished, 6 pages, snapshot 0 huecas/0 resenas/1 critico rafael-el-mato by design) + deployed hosting (release complete); live curl home/login = 200. NOTE deploy quirk: firebase function discovery is intermittently flaky on this Windows box (\"No function matches given --only filters\") — retried per-function and it succeeded. Remaining = human UAT only: on live https://ecuahuecas.web.app/admin click \"Soy el administrador — activar mi cuenta\" (no console) to mint admin, then a normal user clicks \"Solicitar acceso de crítico\" and admin approves in /admin/usuarios. LOW deferred: listCriticos caps at 100 users (no pagination)."
+    }
+  ],
+  "created_at": "2026-06-02T15:22:55.164Z",
+  "updated_at": "2026-06-02T15:56:04.988Z",
+  "jira_key": null
+}

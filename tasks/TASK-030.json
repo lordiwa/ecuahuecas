@@ -1,0 +1,37 @@
+{
+  "key": "TASK-030",
+  "title": "Mapa sin calles: respaldo keyless con calles reales (raster Carto/OSM) cuando no hay MapTiler key",
+  "description": "El usuario reporta que /mapa muestra solo un fondo celeste sin calles. Causa confirmada: .env.local NO tiene VITE_MAPTILER_KEY, así que getMapStyle() (src/lib/map.ts) cae al FALLBACK_STYLE = 'https://demotiles.maplibre.org/style.json', que solo dibuja contornos de países (sin calles ni detalle). El build desplegado usa demotiles (verificado en dist/assets).\n\nDecisión del usuario: arreglar con un mapa de respaldo CON CALLES y SIN API key (no quiere crear cuenta MapTiler por ahora).\n\nCAMBIO (src/lib/map.ts):\n- Cambiar getMapStyle() para que, cuando NO hay MAPTILER_KEY, devuelva un StyleSpecification de MapLibre con un source raster de tiles keyless con calles reales — preferido: Carto Voyager (subdominios a-d). Ej tiles: 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png' (+ b/c/d), tileSize: 256, attribution '© OpenStreetMap contributors, © CARTO'. (Si el developer prefiere OSM estándar tile.openstreetmap.org está bien, pero Carto Voyager se ve más limpio para un sitio de comida y tiene CDN multi-subdominio.)\n- Mantener INTACTA la rama con MAPTILER_KEY: si la key existe, seguir devolviendo el string URL de MapTiler streets-v2 (para futura mejora a vectorial). Por eso el tipo de retorno pasa a `string | StyleSpecification` (importar el tipo de 'maplibre-gl').\n- Los consumidores MapaReal.vue y UbicacionPicker.vue pasan `style: getMapStyle()` directo al constructor `new maplibregl.Map({ style })`, que acepta string U objeto StyleSpecification — NO requieren cambios.\n- Asegurar que la atribución se muestre (MapLibre añade AttributionControl por defecto; el source lleva `attribution`). Cumplimiento OSM/Carto.\n- Actualizar el comentario de .env.example: sin key ahora se ven calles reales (raster keyless) en vez de demotiles.\n\nTDD: test unitario de getMapStyle (sin key en el entorno de test → devuelve un objeto con version:8, un source raster cuyos tiles apuntan a cartocdn (o el proveedor elegido) y un layer raster; incluye attribution). La rama con key depende de import.meta.env y puede omitirse o mockearse si es sencillo. npm test + typecheck verdes, sin romper tests existentes.\n\nDespués: npm run build (verificar que dist ya NO referencia demotiles y sí el proveedor keyless) + /deploy-website. El usuario recarga /mapa con Ctrl+F5 y ve calles.",
+  "acceptance_criteria": [
+    "Cuando NO hay VITE_MAPTILER_KEY, getMapStyle() devuelve un StyleSpecification de MapLibre con tiles raster keyless que muestran CALLES reales (Carto Voyager u OSM), con atribución correcta",
+    "Cuando SÍ hay VITE_MAPTILER_KEY, getMapStyle() sigue devolviendo la URL de estilo de MapTiler (rama intacta)",
+    "MapaReal.vue y UbicacionPicker.vue siguen funcionando sin cambios (style acepta string u objeto); no se rompe el picker del wizard",
+    "Test(s) que verifican el respaldo keyless con calles + atribución; npm test y npm run typecheck limpios",
+    "Tras build+deploy, https://ecuahuecas.web.app/mapa muestra calles reales (ya no solo fondo celeste); dist no referencia demotiles"
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "phase-02",
+    "frontend",
+    "map",
+    "ux"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [
+    "be18d84",
+    "9a77bad"
+  ],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-06T01:30:00.000Z",
+      "body": "DONE & DEPLOYED 2026-06-06. developer TDD commits be18d84 (tests) + 9a77bad (impl); 119 tests + typecheck green; orchestrator self-reviewed (single function, MapTiler branch intact, consumers unchanged). getMapStyle() now returns a keyless Carto Voyager raster StyleSpecification (OSM data, a-d subdomains, attribution) when no VITE_MAPTILER_KEY — real streets instead of demotiles country-outlines. Built (dist: 0 demotiles refs, 1 cartocdn) + deployed hosting. User to hard-reload /mapa."
+    }
+  ],
+  "created_at": "2026-06-06T00:00:00.000Z",
+  "updated_at": "2026-06-06T01:30:00.000Z",
+  "jira_key": null
+}

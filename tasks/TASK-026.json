@@ -1,0 +1,36 @@
+{
+  "key": "TASK-026",
+  "title": "HuecaDetail: galería con TODAS las fotos de la hueca + tarjeta de reseña clickeable",
+  "description": "En la página pública de la hueca (src/pages/HuecaDetail.vue) hay dos bugs reportados por el usuario en https://ecuahuecas.web.app/huecas/kim-s-chicken:\n\n(1) FOTOS: la página solo renderiza `hueca.fotos[0]` (una sola Foto, línea ~55), así que aunque la hueca tenga varias imágenes en Sanity, solo se vería una. El usuario subió 2 fotos a la hueca kim-s-chicken (confirmado en vivo: hueca.fotos tiene 2 imágenes con asset refs válidos). Hay que mostrar TODAS las fotos como una galería. El snapshot (scripts/snapshot-sanity.mjs) ya proyecta y resuelve hueca.fotos a un array de URLs (string[]), así que el dato ya llega; solo falta renderizarlo. Mantener el placeholder (Foto :seed/:color) cuando la hueca no tiene fotos. NOTA: el snapshot guarda fotos como string[] (solo URLs, sin alt) — usar alt decorativo (alt=\\\"\\\"); capturar alt es fuera de alcance (cambiaría el tipo Hueca usado en index/og/etc.).\n\n(2) RESEÑA CLICKEABLE: en la sección 'Reseñas' (líneas ~70-78) cada reseña se muestra como un <article class=\\\"card\\\"> sin enlace. Envolver cada tarjeta en un <RouterLink :to=\\\"`/resenas/${r.slug}`\\\"> (o equivalente) para que lleve al detalle de la reseña, con afordancia de hover y accesible (es un enlace real). La página de detalle de reseña ya existe (ruta name 'resena', /resenas/:slug).\n\nReutilizar estilos existentes (.card, var(--...)), mantener SSG-safe (sin tocar Firebase/Sanity en runtime; todo viene del snapshot estático). Diseño de galería a criterio del developer pero limpio y responsive y consistente con el grid actual (.hueca-grid). \n\nTDD: extender/añadir test de render de HuecaDetail (ya existe @vitejs/plugin-vue en vitest desde TASK-020; ver src/components/Foto.test.ts como patrón) que verifique: con varias fotos se renderizan varias imágenes; con cero fotos aparece el placeholder; cada reseña enlaza a /resenas/<slug>. npm test + typecheck limpios. Luego rebuild (npm run build, recoge las 2 fotos nuevas) + /deploy-website.",
+  "acceptance_criteria": [
+    "HuecaDetail.vue renderiza TODAS las hueca.fotos como una galería responsive (no solo fotos[0]); cuando la hueca no tiene fotos se muestra el placeholder Foto actual",
+    "Cada tarjeta de reseña en la sección 'Reseñas' es un enlace real a /resenas/<slug> (RouterLink), accesible y con estado hover; el resto del contenido (titulo, extracto, estrellas, fecha) se mantiene",
+    "Reutiliza estilos/variables existentes y queda SSG-safe (solo lee del snapshot estático; sin Firebase/Sanity en runtime)",
+    "Tests de render (varias fotos -> varias imágenes; cero fotos -> placeholder; reseña enlaza a su slug) escritos primero y verdes; npm test y npm run typecheck limpios",
+    "Tras rebuild+deploy, https://ecuahuecas.web.app/huecas/kim-s-chicken muestra las 2 fotos reales y la reseña es clickeable y navega a su detalle"
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "phase-02",
+    "frontend",
+    "ux",
+    "reader-pages"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-020"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-02T19:41:54.074Z",
+      "body": "DONE & DEPLOYED 2026-06-02. developer TDD commits 760084a (tests) + 444d93a (impl); 95 tests + typecheck green; orchestrator self-reviewed the 1-file presentational diff (gallery v-for over all hueca.fotos w/ placeholder fallback; reseña cards wrapped in RouterLink to /resenas/<slug> reusing index.vue's card--hover pattern). Rebuilt+deployed hosting; live /huecas/kim-s-chicken now renders the 2 real photos (4 cdn img refs vs 0 before) and the reseña link resolves. ALSO did a related data migration (scripts/fix-critico-id.mjs --commit): the critico had a DOTTED _id (critico.carmen-la-chola from the demo seed) which Sanity hides from public/anonymous reads (same rule as drafts.) — recreated it as critico-rafael-el-mato (dot-free), repointed the Kim's reseña, deleted the old published + stray 'Mato' draft. Verified anon read now returns the critico + reseña->rafael-el-mato. This unblocks the upcoming live-reads migration. NEXT: TASK-027 live client-side Sanity reads so Sanity edits auto-reflect without rebuild (user chose 'lectura en vivo')."
+    }
+  ],
+  "created_at": "2026-06-02T19:22:32.432Z",
+  "updated_at": "2026-06-02T19:41:54.074Z",
+  "jira_key": null
+}

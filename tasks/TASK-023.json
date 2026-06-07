@@ -1,0 +1,38 @@
+{
+  "key": "TASK-023",
+  "title": "Purgar contenido demo de Sanity + limpiar seed muerto (solo contenido real)",
+  "description": "El sitio (que ya lee SOLO de Sanity) muestra contenido demo migrado del seed markdown. Borrarlo para que solo aparezca contenido real. Plan: C:\\\\Users\\\\srpar\\\\.claude\\\\plans\\\\ahora-el-sitio-debria-zany-platypus.md (Change B). Demo a borrar: huecas encebollado-del-mercado, seco-de-chivo-cali; críticos carmen-la-chola, manolo-el-calado; reseña un-encebollado-honesto. CONSERVAR: hueca kim-s-chicken + reseña kim-s-chicken-el-crujido-perfecto-que-nos-tiene-enamorados. DEPENDENCIA CRÍTICA: la reseña de Kim's referencia al crítico demo carmen-la-chola → hay que (1) crear el crítico REAL del usuario (en el Studio https://ecuahuecas.sanity.studio, manual), (2) repuntar la reseña de Kim's a ese crítico, ANTES de borrar. Pasos: backup (npx sanity dataset export production ./backup-pre-purge.tar.gz); script scripts/purge-demo.mjs (--dry-run, token de blog-component/.env, nunca loguear): resolver crítico real (fail si falta) → repuntar Kim's → borrar reseña demo → huecas demo → críticos demo → verificar que queda ≥1 crítico activo. Limpieza: borrar src/content/{huecas,criticos,resenas}/*.md, corregir texto 'Agrega un .md' en src/pages/index.vue (~línea 120), quitar fallback listSlugs en vite.config.ts. Rebuild + redeploy hosting.",
+  "acceptance_criteria": [
+    "Existe un crítico REAL activo en Sanity (creado por el usuario) y la reseña de Kim's Chicken lo referencia (ya no a carmen-la-chola)",
+    "Backup del dataset exportado antes de borrar nada",
+    "Los 5 docs demo (2 huecas, 2 críticos, 1 reseña) eliminados de Sanity production respetando integridad referencial; queda ≥1 crítico activo",
+    "Archivos seed muertos borrados (src/content/**/*.md); texto obsoleto en index.vue corregido; fallback markdown en vite.config.ts removido sin romper el SSG (slugs vienen del snapshot)",
+    "npm run snapshot muestra solo contenido real (Kim's hueca + Kim's reseña con critico_id = crítico real); npm run build OK",
+    "Hosting redeployado; el sitio en vivo ya no muestra contenido demo y las páginas renderizan sin error"
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "phase-02",
+    "sanity",
+    "cleanup",
+    "content",
+    "data-migration"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-022"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-02T18:57:04.870Z",
+      "body": "DONE 2026-06-02. Original destructive demo-purge was MOOT (user had already cleaned the dataset manually). Dead-file cleanup committed earlier (0f519db). Final remaining value — publish a real reseña + deploy — is now ACHIEVED: user logged in via the new console-free admin flow (TASK-025) and published 'Kim's Chicken' (hueca kim-s-chicken + reseña kim-s-chicken-donde-el-pollo-es-un-arte, author rafael-el-mato). Verified live in Sanity (1 hueca/1 critico/1 resena) and rebuilt+redeployed hosting; live pages /resenas/kim-s-chicken-donde-el-pollo-es-un-arte + /huecas/kim-s-chicken return 200 and appear on home. Throwaway scripts/inspect-sanity.mjs (untracked) + scripts/purge-demo.mjs (committed, dead) still pending deletion on session close."
+    }
+  ],
+  "created_at": "2026-06-01T22:35:19.916Z",
+  "updated_at": "2026-06-02T18:57:04.870Z",
+  "jira_key": null
+}

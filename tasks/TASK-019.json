@@ -9,7 +9,7 @@
     "Decisión documentada sobre critico.reviews (omitir vs 0)",
     "snapshot-sanity.mjs no lista nombres de claves sensibles en sus logs"
   ],
-  "status": "todo",
+  "status": "done",
   "priority": "low",
   "labels": [
     "phase-02",
@@ -23,8 +23,14 @@
   ],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-07T01:35:08.595Z",
+      "body": "Closed — reduced scope (most of the ticket was already satisfied by TASK-018/023/027: md seed deleted, vite.config slug derivation, data/render tests). Remaining work done this round: (1) deleted dead src/lib/sanity.ts (no importers); (2) snapshot-sanity.mjs logs only the COUNT of .env keys (no longer leaks key names); (3) product decision = OMIT critico.reviews (removed from snapshot projection, Critico type, and live-read sanityContent.ts in parity; hueca.reviews untouched); (4) confirmed existing tests cover the layer via fixtures/mocks (no real snapshot/token), no padding added. Developer commits 40e2178 (chore) + 6adc30a (refactor) on main. 143 tests + typecheck + build green. Reviewer PASS, zero findings. Rebuilt + deployed hosting (home + /criticos/rafael-el-mato 200). Punch-list (out of scope, not actioned): content.ts statically imports the gitignored content-snapshot.json so a clean clone without a token/build can't typecheck — consider a committed placeholder snapshot or pretest hook later."
+    }
+  ],
   "created_at": "2026-05-31T15:34:41.112Z",
-  "updated_at": "2026-05-31T15:34:41.112Z",
+  "updated_at": "2026-06-07T01:35:08.957Z",
   "jira_key": null
 }

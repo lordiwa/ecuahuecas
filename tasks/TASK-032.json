@@ -1,0 +1,40 @@
+{
+  "key": "TASK-032",
+  "title": "Veredicto estructurado (A favor / En contra / Ticket): wizard + IA + publishResena",
+  "description": "Hacer que aparezca el recuadro amarillo 'Veredicto' (A favor / En contra / Ticket) en la página de reseña. Hoy ese recuadro (ResenaDetail.vue) y la proyección de lectura (scripts/snapshot-sanity.mjs + src/lib/sanityContent.ts, ya proyectan veredicto estructurado {aFavor[],enContra[],ticket}) están listos, pero el wizard publica el veredicto como texto libre (blockquote al final del cuerpo) y NUNCA llena el objeto estructurado. Tipo destino: VeredictoBox {aFavor:string[]; enContra:string[]; ticket?:string} (src/types/content.ts).\n\nDECISIONES DE DISEÑO (confirmadas con el usuario):\n1. REEMPLAZAR el campo libre 'Veredicto' (textarea) por 3 campos estructurados: 'A favor' (lista, uno por línea), 'En contra' (lista, uno por línea), 'Ticket (lo que pagaste)' (texto). Ya NO se publica un cierre en prosa / blockquote de veredicto.\n2. 'Generar con IA' TAMBIÉN debe rellenar aFavor / enContra / ticket (además de título/extracto/cuerpo). El usuario los puede editar.\n\nCAMBIOS:\n\nA) src/lib/drafts.ts: quitar `veredicto: string` de ResenaDraft y createEmptyDraft(); añadir 3 campos string: `veredictoAFavor: string`, `veredictoEnContra: string` (textareas crudos, separados por salto de línea) y `veredictoTicket: string` (default ''). Compatibilidad: drafts viejos traen `veredicto` (string) y no traen los nuevos campos → el wizard siembra con `?? ''` y simplemente ignora el `veredicto` legacy (no migrar su contenido). No romper loadDraft.\n\nB) src/components/ResenaWizard.vue:\n   - Reemplazar el ref `veredicto` por `veredictoAFavor`, `veredictoEnContra`, `veredictoTicket` (sembrados de props.initial con `?? ''`).\n   - En el paso 3, reemplazar el textarea 'Veredicto' por: textarea 'A favor (uno por línea)', textarea 'En contra (uno por línea)', input 'Ticket (lo que pagaste)'. Gate de IA igual que hoy.\n   - onGenerar(): el resultado de la IA ahora incluye aFavor:string[], enContra:string[], ticket:string → mapearlos a los campos (join('\\n') en los textareas, ticket directo). Mantener notas = instruccionesIA (TASK-029). El confirm de no pisar el body se mantiene; considerar también no pisar veredicto si ya hay algo (opcional, mismo patrón).\n   - onPublicar(): en el payload de publishResena, reemplazar `veredicto: veredicto.value` por `veredicto: { aFavor, enContra, ticket }` donde aFavor/enContra se parsean de los textareas (split('\\n'), trim, descartar vacíos) y ticket = veredictoTicket.value.trim().\n   - buildDraft(): incluir los 3 campos. Añadirlos al watch que limpia savedAt. Ajustar tests existentes del wizard (TASK-029) que asumían `veredicto: veredicto.value` string en el payload.\n\nC) src/lib/publish.ts: en GenerateResenaDraftResult añadir `aFavor?: string[]`, `enContra?: string[]`, `ticket?: string`. En PublishResenaPayload cambiar `veredicto: string` por `veredicto: { aFavor: string[]; enContra: string[]; ticket?: string }` (o un tipo VeredictoInput exportado).\n\nD) functions/publishResena.js:\n   - generateResenaDraft: extender DRAFT_TOOL.input_schema con `aFavor` (array de strings), `enContra` (array de strings), `ticket` (string), y pedirlos en el SYSTEM_PROMPT/userPrompt ('puntos a favor', 'en contra', 'ticket/precio estimado'). Devolverlos en el return (aFavor/enContra arrays, ticket string), con defaults seguros.\n   - publishResena: DEJAR de anexar el blockquote de veredicto al body. En su lugar, escribir resenaDoc.veredicto = { aFavor:[...], enContra:[...], ticket } normalizando data.veredicto de forma defensiva (arrays de strings no vacíos; ticket opcional). Si todo viene vacío, omitir el campo veredicto (no escribir objeto vacío).\n   - Para testear lógica pura sin mockear Anthropic/Sanity, EXTRAER un helper puro a functions/lib/ (p.ej. functions/lib/veredicto.js: `normalizeVeredicto(input) -> {aFavor,enContra,ticket?}|undefined`) y unit-testearlo (functions/lib/veredicto.test.ts), igual que portableText/resolveHueca.\n\nE) Lecturas: NO cambian (snapshot-sanity.mjs y sanityContent.ts ya proyectan veredicto estructurado; ResenaDetail.vue ya pinta el recuadro). Solo verificar paridad.\n\nTDD: (drafts) createEmptyDraft trae los 3 campos ''; round-trip; compat con draft legacy `veredicto:string`. (wizard) los 3 inputs renderizan; onGenerar mapea aFavor/enContra/ticket de la IA a los campos; onPublicar envía veredicto estructurado parseado (arrays sin vacíos) y ya NO un string; ajustar tests TASK-029. (functions) normalizeVeredicto pura cubierta. npm test + typecheck verdes.\n\nDespués (orquestador): firebase deploy --only functions:generateResenaDraft,functions:publishResena (redeploy, ojo flaky fn-discovery en Windows: reintentar) + curl 401 a ambas + npm run build + /deploy-website. UAT: publicar una reseña con la IA y ver el recuadro amarillo A favor/En contra/Ticket en vivo.",
+  "acceptance_criteria": [
+    "El paso 3 del wizard tiene 3 campos: 'A favor' (uno por línea), 'En contra' (uno por línea) y 'Ticket'; el textarea libre 'Veredicto' ya no existe",
+    "'Generar con IA' rellena automáticamente A favor / En contra / Ticket (además de título/cuerpo), editables por el usuario; la IA sigue leyendo el campo de indicaciones (TASK-029)",
+    "publishResena escribe resena.veredicto como objeto estructurado {aFavor,enContra,ticket} y ya NO anexa el blockquote de veredicto al cuerpo",
+    "El recuadro amarillo 'Veredicto' aparece en la página de reseña cuando hay datos; se omite cuando viene vacío",
+    "Helper puro normalizeVeredicto en functions/lib/ con tests; compat de drafts legacy (veredicto:string) sin romper",
+    "Tests TDD en client (drafts + wizard) y functions (normalizeVeredicto); npm test y npm run typecheck limpios",
+    "Tras redeploy de funciones (curl 401 OK) + build + deploy, una reseña nueva publicada con IA muestra el recuadro A favor/En contra/Ticket en https://ecuahuecas.web.app"
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "phase-02",
+    "frontend",
+    "functions",
+    "wizard",
+    "ai"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-029",
+    "TASK-031"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-07T01:09:20.361Z",
+      "body": "Closed. TDD commits 09d6dc9 (tests) + 36a587d (impl) on main. 143 tests + typecheck green. Deployed generateResenaDraft + publishResena (Node22, us-central1; flaky Windows fn-discovery needed a full --only functions --force pass); curl 401 OK on both. npm run build (snapshot picked up Kuro Sushi Bar + Kim's Chicken reseñas) + hosting deploy to https://ecuahuecas.web.app (home 200, Kuro reseña page 200). User confirmed UAT (\"ya revise\"). Structured veredicto {aFavor,enContra,ticket} now flows wizard -> AI -> publishResena; legacy blockquote dropped."
+    }
+  ],
+  "created_at": "2026-06-06T00:00:00.000Z",
+  "updated_at": "2026-06-07T01:09:21.079Z",
+  "jira_key": null
+}

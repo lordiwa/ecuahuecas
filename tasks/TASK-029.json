@@ -1,0 +1,41 @@
+{
+  "key": "TASK-029",
+  "title": "Wizard: campo de indicaciones para la IA (referencias) que alimenta 'Generar con IA'",
+  "description": "El usuario quiere un espacio en el paso 3 del wizard de crear reseña donde pueda 'hablarle a la IA' y dar referencias de lo que necesita; al pulsar 'Generar con IA', la IA lee ese texto y escribe/mejora la reseña a partir de él.\n\nDECISIONES DE DISEÑO (confirmadas con el usuario):\n1. Es un campo NUEVO y DEDICADO ('Indicaciones / referencias para la IA'), un textarea que NO se publica — es solo guía para la IA.\n2. El campo 'Veredicto' se queda como cierre publicado (se sigue publicando como cita), pero la IA DEJA de leerlo: ahora la IA lee el nuevo campo de indicaciones.\n\nEstado actual relevante:\n- src/components/ResenaWizard.vue, paso 3: hoy onGenerar() envía notas=veredicto.value a generateResenaDraft({huecaNombre, ciudad, rating, notas, tagline}). La IA devuelve titulo/extracto(→tagline)/bodyMarkdown(→body).\n- El backend functions/publishResena.js -> generateResenaDraft YA acepta data.notas y arma el prompt con 'Notas del crítico'. NO requiere cambios ni redeploy de Cloud Functions.\n- src/lib/drafts.ts define ResenaDraft (persistido en localStorage) y createEmptyDraft().\n\nCAMBIO (solo frontend):\n1. src/lib/drafts.ts: añadir campo `instruccionesIA: string` a la interfaz ResenaDraft y a createEmptyDraft() (default ''). Compatibilidad hacia atrás: drafts viejos en localStorage no traen el campo (undefined) — el wizard debe sembrar con `props.initial.instruccionesIA ?? ''`.\n2. src/components/ResenaWizard.vue:\n   - Nuevo ref `instruccionesIA = ref(props.initial.instruccionesIA ?? '')`.\n   - Textarea en el paso 3, ubicado junto al botón 'Generar con IA' (encima del botón, como entrada de la IA), label tipo 'Indicaciones / referencias para la IA' + hint corto ('Cuéntale a la IA qué destacar; lo lee al generar. No se publica.').\n   - onGenerar(): enviar `notas: instruccionesIA.value` en vez de veredicto.value. Mantener el resto (huecaNombre, ciudad, rating, tagline) igual. (El guard que confirma antes de pisar el body se mantiene.)\n   - buildDraft(): incluir instruccionesIA. Añadir instruccionesIA al watch que limpia savedAt.\n   - El nuevo campo NO se incluye en el payload de publishResena (no se publica).\n   - Actualizar el hint del botón si aplica (hoy dice 'Usa tus notas del veredicto y la calificación.' → debería referirse a las indicaciones de la IA).\n\nTDD: tests que verifiquen (a) ResenaDraft/createEmptyDraft incluyen instruccionesIA=''; (b) al pulsar 'Generar con IA' se llama generateResenaDraft con notas = el texto del nuevo campo (no el veredicto); (c) el campo instruccionesIA NO se envía en el payload de publishResena; (d) compat: un draft sin instruccionesIA carga sin romper. Ajustar tests existentes del wizard que asumían notas=veredicto. npm test + typecheck verdes.\n\nNO requiere redeploy de funciones. Después: npm run build + /deploy-website (con lectura en vivo activa, igual conviene rebuild para refrescar el prerender de /admin no aplica porque /admin no se prerenderiza, pero el deploy publica el bundle nuevo del wizard).",
+  "acceptance_criteria": [
+    "El paso 3 del wizard muestra un campo NUEVO 'Indicaciones / referencias para la IA' (textarea) cerca del botón 'Generar con IA', con un hint que aclara que es guía para la IA y NO se publica",
+    "Al pulsar 'Generar con IA', se llama a generateResenaDraft con notas = el texto del nuevo campo de indicaciones (ya NO el campo Veredicto)",
+    "El campo 'Veredicto' sigue existiendo y se publica como cierre (cita), pero ya no se usa como entrada de la IA",
+    "El nuevo campo instruccionesIA se persiste en el borrador (localStorage) y NO se incluye en el payload de publishResena (no se publica)",
+    "Compatibilidad: un borrador guardado antes (sin instruccionesIA) se carga sin error (se trata como cadena vacía)",
+    "Tests TDD que cubren el cableado del nuevo campo a la IA y la no-publicación; npm test y npm run typecheck limpios"
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "phase-02",
+    "frontend",
+    "wizard",
+    "ai"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-013",
+    "TASK-022"
+  ],
+  "linked_commits": [
+    "fbda613",
+    "7798b02"
+  ],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-06T00:40:00.000Z",
+      "body": "DONE & DEPLOYED 2026-06-06. developer TDD commits fbda613 (tests) + 7798b02 (impl); 114 tests + typecheck green; reviewer PASS (no HIGH/MEDIUM; 1 LOW re: tests only cover admin path, 1 NIT). Frontend-only — no Cloud Function change/redeploy (generateResenaDraft already accepts data.notas). New admin-gated 'Indicaciones / referencias para la IA' textarea in step 3; 'Generar con IA' now sends notas=instruccionesIA (not veredicto); field persisted in draft (instruccionesIA) and NOT in publishResena payload; veredicto still published as closing blockquote. Built + deployed hosting (live 200)."
+    }
+  ],
+  "created_at": "2026-06-06T00:00:00.000Z",
+  "updated_at": "2026-06-06T00:40:00.000Z",
+  "jira_key": null
+}

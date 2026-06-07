@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-01T21:44:07.999Z",
+  "generated_at": "2026-06-07T01:35:08.957Z",
   "tasks": [
     {
       "key": "TASK-006",
@@ -82,7 +82,7 @@
     {
       "key": "TASK-019",
       "title": "Fase 02 — Deuda técnica post-migración Sanity (tests del snapshot/render + limpieza seed markdown)",
-      "status": "todo",
+      "status": "done",
       "priority": "low"
     },
     {
@@ -96,6 +96,72 @@
       "title": "publishResena: reutilizar hueca existente por slug en vez de crear duplicados",
       "status": "done",
       "priority": "medium"
+    },
+    {
+      "key": "TASK-022",
+      "title": "Wizard: crear hueca nueva con TODOS los campos (precio, barrio, etc.) + validación obligatoria",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-023",
+      "title": "Purgar contenido demo de Sanity + limpiar seed muerto (solo contenido real)",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-024",
+      "title": "Roles a prueba de tontos: botón \"Activar admin\" en el sitio + solicitud self-service de crítico (sin consola)",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-025",
+      "title": "Simplificar auth a allowlist de admins en Firestore (quitar rol crítico, ocultar /admin y botón Ingresar)",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-026",
+      "title": "HuecaDetail: galería con TODAS las fotos de la hueca + tarjeta de reseña clickeable",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-027",
+      "title": "Lectura en vivo: las páginas públicas leen Sanity en el navegador (auto-actualización sin rebuild)",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-028",
+      "title": "Fotos recortadas: mostrar imagen completa (proporción natural) en detalle de hueca y reseña",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-029",
+      "title": "Wizard: campo de indicaciones para la IA (referencias) que alimenta 'Generar con IA'",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-030",
+      "title": "Mapa sin calles: respaldo keyless con calles reales (raster Carto/OSM) cuando no hay MapTiler key",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-031",
+      "title": "Enriquecer la página de reseña: ficha 'Dónde comer' + ficha del crítico + galería de fotos",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-032",
+      "title": "Veredicto estructurado (A favor / En contra / Ticket): wizard + IA + publishResena",
+      "status": "done",
+      "priority": "high"
     }
   ]
 }

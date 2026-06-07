@@ -1,0 +1,40 @@
+{
+  "key": "TASK-027",
+  "title": "Lectura en vivo: las páginas públicas leen Sanity en el navegador (auto-actualización sin rebuild)",
+  "description": "El usuario eligió que el sitio se actualice solo: al editar/agregar contenido en Sanity, debe reflejarse al recargar el sitio SIN reconstruir ni redesplegar. Hoy las páginas públicas leen un snapshot estático (src/content-snapshot.json vía src/lib/content.ts), por eso los cambios solo aparecen tras `npm run build` + deploy.\n\nBUENA NOTICIA YA VERIFICADA: el dataset gvc4yjqj/production es aclMode 'public' y la lectura ANÓNIMA (sin token) ya funciona para hueca, resena y critico (este último se arregló en TASK-026: su _id con punto se recreó como critico-rafael-el-mato; los _id con punto NO se exponen en lectura pública). Así que el navegador puede leer Sanity sin token.\n\nDISEÑO (SSG + hidratación en cliente — conserva SEO/primera pintura y agrega frescura):\n- Mantener el snapshot de build como SEMILLA para el prerender/SSR (primera pintura + buscadores). No se rompe el zero-JS inicial.\n- En el navegador (onMounted), refrescar desde Sanity con el cliente SIN token (src/lib/sanity.ts, useCdn:true, perspective published) y actualizar el estado reactivo; las páginas reflejan los datos en vivo al recargar.\n- Refactor de src/lib/content.ts: el estado (huecas/criticos/resenas) pasa a ser REACTIVO (ref), inicializado desde el snapshot importado (sync, SSR-safe), con una función refreshContent() que hace fetch en vivo y reemplaza el estado. Exponer un useContent() (o equivalente) con vistas reactivas + los helpers existentes (getHueca, resenasDeHueca, huecasTop, etc.) leyendo el estado reactivo. Disparar refreshContent() una vez en cliente (App.vue onMounted o guard isClient).\n- El fetch del navegador debe replicar las MISMAS proyecciones GROQ y el mismo SHAPE que scripts/snapshot-sanity.mjs (fotos -> URLs string vía @sanity/image-url; body/bio -> PortableText crudo; resena.hueca_id/critico_id -> slugs). Centralizar la proyección+mapeo en un módulo TS (p.ej. src/lib/sanityContent.ts) para minimizar drift; documentar que debe mantenerse en paralelo con el script de snapshot.\n- Páginas afectadas: index.vue, HuecaDetail.vue, ResenaDetail.vue, CriticoDetail.vue, top10.vue, buscar.vue, mapa.vue. Cuidado con capturas no reactivas en setup (p.ej. index.vue hace `const destacada = huecasTop(1)[0]` y `const recientes = resenas.slice(0,6)` — deben volverse computed para reaccionar al refresh). HuecaDetail ya usa computed (getHueca) y se beneficiará solo.\n\nSEGURIDAD/SSG: NUNCA token en el cliente (solo lectura pública anónima). Nada que toque Sanity en import/module-eval (romper prerender) — el fetch corre solo en cliente onMounted. Mantener VITE_SANITY_* (.env.local) para projectId/dataset del cliente.\n\nTDD: tests del módulo de fetch/mapeo (mock del cliente Sanity → verifica shape idéntico al snapshot: fotos como string[], body PortableText, slugs de refs) y de la reactividad (refreshContent actualiza el estado y las vistas/computed). Ajustar tests existentes que asuman content.ts como arrays estáticos. npm test + typecheck verdes.\n\nDEPLOY (orquestador): build + /deploy-website. Verificación de aceptación: editar un campo en Sanity (p.ej. el título de la reseña o un tag de la hueca) y que aparezca en el sitio en vivo TRAS RECARGAR, sin reconstruir.",
+  "acceptance_criteria": [
+    "Las páginas públicas (index, HuecaDetail, ResenaDetail, CriticoDetail, top10, buscar, mapa) muestran datos leídos EN VIVO desde Sanity en el navegador; un cambio hecho en Sanity aparece al recargar el sitio SIN rebuild/deploy",
+    "El snapshot de build se mantiene como semilla del prerender/SSR (primera pintura + SEO); el cliente lee SIN token (anónimo, CDN, perspective published) — cero secretos en el bundle",
+    "src/lib/content.ts expone estado REACTIVO + refreshContent(); el refresh se dispara una vez en cliente (onMounted) y todas las páginas se actualizan (sin capturas no reactivas: index.vue usa computed para destacada/recientes/top)",
+    "El fetch del navegador produce el MISMO shape que scripts/snapshot-sanity.mjs (fotos->string[] vía @sanity/image-url, body/bio->PortableText, refs->slugs); proyección+mapeo centralizados en un módulo TS reutilizable",
+    "SSG-safe: ninguna llamada a Sanity en import/module-eval; nada rompe el prerender de vite-ssg; el cliente tokenless usa VITE_SANITY_*",
+    "Tests nuevos (fetch/mapeo con cliente mockeado verificando shape; reactividad de refreshContent) escritos y verdes; tests existentes ajustados; npm test y npm run typecheck limpios",
+    "Tras build+deploy: editar un campo en Sanity (p.ej. título de reseña o tag de hueca) se refleja en https://ecuahuecas.web.app al recargar, sin reconstruir"
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "phase-02",
+    "frontend",
+    "sanity",
+    "architecture",
+    "reader-pages"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-018",
+    "TASK-026"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-02T22:11:16.324Z",
+      "body": "DONE & DEPLOYED 2026-06-02. developer TDD commits d174ada (tests) + 13cd078 (impl); 104 tests + typecheck green; reviewer PASS WITH NITS (no HIGH/MEDIUM; confirmed NO token in client, SSG-safe lazy client only reached from browser onMounted, reactivity + shape parity correct). New src/lib/sanityContent.ts (tokenless public CDN, perspective published, lazy client, mirrors snapshot projections); content.ts now reactive refs seeded from snapshot + refreshContent(); App.vue onMounted calls it (window-guarded); index/top10/buscar/mapa/CriticoDetail/ResenaWizard updated for reactivity. Built + deployed hosting; confirmed deployed bundle app-Du57zvVc.js references the Sanity API (live read ships). Snapshot remains SSR/prerender seed (SEO + first paint). NITs deferred: optional AbortController/timeout on fetchContent; doc-note the non-observable undefined-stripping parity. ACCEPTANCE (user UAT): edit a visible field in Sanity Studio (reseña titulo / hueca tags/nombre) then reload https://ecuahuecas.web.app — change appears with NO rebuild."
+    }
+  ],
+  "created_at": "2026-06-02T19:43:23.932Z",
+  "updated_at": "2026-06-02T22:11:16.324Z",
+  "jira_key": null
+}
