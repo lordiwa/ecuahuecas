@@ -1,3 +1,5 @@
+import type { StyleSpecification } from 'maplibre-gl'
+
 export interface LngLat {
   lat: number
   lng: number
@@ -5,13 +7,39 @@ export interface LngLat {
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY as string | undefined
 
-const FALLBACK_STYLE = 'https://demotiles.maplibre.org/style.json'
+// Keyless real-street basemap (no API key / no account required).
+// Carto Voyager raster tiles over OpenStreetMap data, served from the a–d
+// CDN subdomains. Used as the fallback when no VITE_MAPTILER_KEY is set so the
+// map still shows actual streets instead of a bare country-outline demo map.
+const KEYLESS_STREET_STYLE: StyleSpecification = {
+  version: 8,
+  sources: {
+    'carto-voyager': {
+      type: 'raster',
+      tiles: [
+        'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+        'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+        'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+        'https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+      ],
+      tileSize: 256,
+      attribution: '© OpenStreetMap contributors, © CARTO',
+    },
+  },
+  layers: [
+    {
+      id: 'carto-voyager',
+      type: 'raster',
+      source: 'carto-voyager',
+    },
+  ],
+}
 
-export function getMapStyle(): string {
+export function getMapStyle(): string | StyleSpecification {
   if (MAPTILER_KEY) {
     return `https://api.maptiler.com/maps/streets-v2/style.json?key=${MAPTILER_KEY}`
   }
-  return FALLBACK_STYLE
+  return KEYLESS_STREET_STYLE
 }
 
 export const usingMaptiler = !!MAPTILER_KEY
