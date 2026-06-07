@@ -54,7 +54,12 @@ const rating = ref(props.initial.rating)
 const titulo = ref(props.initial.titulo)
 const tagline = ref(props.initial.tagline)
 const body = ref(props.initial.body)
-const veredicto = ref(props.initial.veredicto)
+// Structured veredicto edited as raw textarea/input text. Backward-compat: drafts
+// saved before the split lack these fields (they may carry a legacy free-text
+// `veredicto`, which we ignore) → seed with `?? ''`.
+const veredictoAFavor = ref(props.initial.veredictoAFavor ?? '')
+const veredictoEnContra = ref(props.initial.veredictoEnContra ?? '')
+const veredictoTicket = ref(props.initial.veredictoTicket ?? '')
 // Private guide fed to the AI as `notas` (NOT published). Backward-compat:
 // drafts saved before this field existed won't carry it → treat as ''.
 const instruccionesIA = ref(props.initial.instruccionesIA ?? '')
@@ -119,6 +124,14 @@ const showReuploadWarning = computed(
   () => hadPersistedPhotos && !photos.value.some((p) => p.blob),
 )
 
+/** Split newline-separated textarea text into trimmed, non-empty lines. */
+function parseLines(raw: string): string[] {
+  return raw
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+}
+
 function buildDraft(): ResenaDraft {
   return {
     id,
@@ -131,7 +144,9 @@ function buildDraft(): ResenaDraft {
     titulo: titulo.value,
     tagline: tagline.value,
     body: body.value,
-    veredicto: veredicto.value,
+    veredictoAFavor: veredictoAFavor.value,
+    veredictoEnContra: veredictoEnContra.value,
+    veredictoTicket: veredictoTicket.value,
     instruccionesIA: instruccionesIA.value,
     photos: photos.value,
     heroId: heroId.value,
@@ -168,6 +183,15 @@ async function onGenerar() {
     titulo.value = out.titulo || titulo.value
     body.value = out.bodyMarkdown || body.value
     if (out.extracto) tagline.value = out.extracto
+    // The AI also suggests structured veredicto points; map them into the fields
+    // (textareas are newline-separated). Only overwrite when the AI returned data.
+    if (Array.isArray(out.aFavor) && out.aFavor.length > 0) {
+      veredictoAFavor.value = out.aFavor.join('\n')
+    }
+    if (Array.isArray(out.enContra) && out.enContra.length > 0) {
+      veredictoEnContra.value = out.enContra.join('\n')
+    }
+    if (out.ticket) veredictoTicket.value = out.ticket
   } catch (err) {
     generateError.value = err instanceof Error ? err.message : 'No se pudo generar la reseña.'
   } finally {
@@ -220,7 +244,11 @@ async function onPublicar() {
       titulo: titulo.value,
       tagline: tagline.value,
       body: body.value,
-      veredicto: veredicto.value,
+      veredicto: {
+        aFavor: parseLines(veredictoAFavor.value),
+        enContra: parseLines(veredictoEnContra.value),
+        ticket: veredictoTicket.value.trim() || undefined,
+      },
       heroId: heroId.value,
       photos: payloadPhotos,
       criticoSlug: criticoSlug.value || undefined,
@@ -270,9 +298,23 @@ onBeforeUnmount(() => {
 })
 
 // Reset the "saved" indicator whenever the user edits something.
-watch([titulo, tagline, body, veredicto, instruccionesIA, rating, huecaId, huecaMode], () => {
-  savedAt.value = null
-})
+watch(
+  [
+    titulo,
+    tagline,
+    body,
+    veredictoAFavor,
+    veredictoEnContra,
+    veredictoTicket,
+    instruccionesIA,
+    rating,
+    huecaId,
+    huecaMode,
+  ],
+  () => {
+    savedAt.value = null
+  },
+)
 
 function backToList() {
   router.push({ name: 'admin-resenas' })
@@ -415,8 +457,16 @@ function backToList() {
         <RichTextEditor v-model="body" :min-height="380" placeholder="Cuenta la experiencia…" />
       </div>
       <div class="field">
-        <label class="field-label" for="veredicto">Veredicto</label>
-        <textarea id="veredicto" v-model="veredicto" class="input" rows="4" placeholder="El cierre: ¿vale la pena el viaje?"></textarea>
+        <label class="field-label" for="veredicto-afavor">A favor (uno por línea)</label>
+        <textarea id="veredicto-afavor" v-model="veredictoAFavor" class="input" rows="4" placeholder="Caldo concentrado&#10;Porciones generosas"></textarea>
+      </div>
+      <div class="field">
+        <label class="field-label" for="veredicto-encontra">En contra (uno por línea)</label>
+        <textarea id="veredicto-encontra" v-model="veredictoEnContra" class="input" rows="4" placeholder="Local pequeño&#10;Cola larga"></textarea>
+      </div>
+      <div class="field">
+        <label class="field-label" for="veredicto-ticket">Ticket (lo que pagaste)</label>
+        <input id="veredicto-ticket" v-model="veredictoTicket" class="input" type="text" placeholder="Ej: $3.50" />
       </div>
     </section>
 

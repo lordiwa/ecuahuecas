@@ -36,6 +36,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https'
 import { defineSecret, defineString } from 'firebase-functions/params'
 import { slugify, markdownToPortableText } from './lib/portableText.js'
 import { resolveNuevaHuecaId } from './lib/resolveHueca.js'
+import { normalizeVeredicto } from './lib/veredicto.js'
 import { verifiedEmailFrom } from './lib/adminAllowlist.js'
 import { isAdminEmail } from './isAdminEmail.js'
 
@@ -102,6 +103,20 @@ const DRAFT_TOOL = {
         type: 'string',
         description: 'Cuerpo de la reseña en MARKDOWN (encabezados, párrafos, listas).',
       },
+      aFavor: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Puntos a favor, cortos y concretos (un bullet por elemento).',
+      },
+      enContra: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Puntos en contra, cortos y concretos (un bullet por elemento).',
+      },
+      ticket: {
+        type: 'string',
+        description: 'Ticket / precio estimado de lo que se pagó (ej: "$3.50"). Vacío si se desconoce.',
+      },
     },
     required: ['titulo', 'extracto', 'bodyMarkdown'],
   },
@@ -112,6 +127,7 @@ const SYSTEM_PROMPT = [
   'SIEMPRE respondes llamando a la herramienta `emit_resena`.',
   'En `bodyMarkdown` devuelve MARKDOWN (encabezados, párrafos y listas están bien); no inventes imágenes ni campos.',
   'El cuerpo debe leerse como una reseña completa y publicable.',
+  'Además rellena `aFavor` (puntos a favor) y `enContra` (puntos en contra) como listas cortas y concretas, y `ticket` con el precio estimado de lo que se pagó (ej: "$3.50"); deja `ticket` vacío si no lo sabes.',
 ].join(' ')
 
 // ── generateResenaDraft ──────────────────────────────────────────────────────
@@ -168,10 +184,15 @@ export const generateResenaDraft = onCall(
     }
 
     const out = toolUse.input || {}
+    const toStringArray = (v) =>
+      Array.isArray(v) ? v.map((x) => String(x || '')).filter((x) => x.trim().length > 0) : []
     return {
       titulo: String(out.titulo || ''),
       extracto: String(out.extracto || ''),
       bodyMarkdown: String(out.bodyMarkdown || ''),
+      aFavor: toStringArray(out.aFavor),
+      enContra: toStringArray(out.enContra),
+      ticket: String(out.ticket || ''),
     }
   },
 )
@@ -298,18 +319,10 @@ export const publishResena = onCall(
         .commit({ autoGenerateArrayKeys: true })
     }
 
-    // d. Build the body; append the veredicto as a blockquote when present.
+    // d. Build the body. The veredicto is NO LONGER appended as a blockquote — it
+    // is stored as a structured object (see step e) rendered as its own box.
     const body = markdownToPortableText(String(data.body || ''))
-    const veredicto = String(data.veredicto || '').trim()
-    if (veredicto) {
-      body.push({
-        _type: 'block',
-        _key: `bv${body.length}`,
-        style: 'blockquote',
-        markDefs: [],
-        children: [{ _type: 'span', _key: `bv${body.length}s0`, text: veredicto, marks: [] }],
-      })
-    }
+    const veredicto = normalizeVeredicto(data.veredicto)
 
     // e. Create the reseña with a unique slug.
     const slugBase = slugify(String(data.titulo || '') || huecaId)
@@ -327,6 +340,9 @@ export const publishResena = onCall(
       activa: true,
     }
     if (resenaImagen) resenaDoc.imagen = resenaImagen
+    // Only attach veredicto when it has content (normalizeVeredicto → undefined
+    // when aFavor + enContra are empty and there is no ticket).
+    if (veredicto) resenaDoc.veredicto = veredicto
 
     const created = await sanity.create(resenaDoc, { autoGenerateArrayKeys: true })
 

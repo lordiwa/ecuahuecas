@@ -54,11 +54,20 @@ export interface ResenaDraft {
   tagline: string
   /** Markdown body produced by RichTextEditor. */
   body: string
-  veredicto: string
+  /**
+   * Structured veredicto, edited as raw textarea/input text. `veredictoAFavor`
+   * and `veredictoEnContra` are newline-separated lists (one bullet per line);
+   * `veredictoTicket` is the price the critic paid. These are parsed into the
+   * structured `veredicto` object only at publish time. Legacy drafts may instead
+   * carry a single free-text `veredicto: string`; it is ignored (no migration)
+   * and the wizard seeds the three fields with `?? ''`.
+   */
+  veredictoAFavor: string
+  veredictoEnContra: string
+  veredictoTicket: string
   /**
    * Private guide for the AI: free-text the critic writes to steer
-   * "Generar con IA" (sent as `notas`). It is NEVER published — unlike
-   * `veredicto`, which is the closing blockquote shown to readers.
+   * "Generar con IA" (sent as `notas`). It is NEVER published.
    */
   instruccionesIA: string
   /** Photos minus their blobs once persisted; in-memory drafts may carry blobs. */
@@ -191,7 +200,9 @@ export function createEmptyDraft(id?: string): ResenaDraft {
     titulo: '',
     tagline: '',
     body: '',
-    veredicto: '',
+    veredictoAFavor: '',
+    veredictoEnContra: '',
+    veredictoTicket: '',
     instruccionesIA: '',
     photos: [],
     heroId: null,

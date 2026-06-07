@@ -24,6 +24,10 @@ export interface GenerateResenaDraftResult {
   titulo: string
   extracto: string
   bodyMarkdown: string
+  /** AI-suggested veredicto points; the wizard maps these into its fields. */
+  aFavor?: string[]
+  enContra?: string[]
+  ticket?: string
 }
 
 export async function generateResenaDraft(
@@ -52,6 +56,13 @@ export interface PublishPhoto {
   isHero: boolean
 }
 
+/** Structured veredicto as sent to `publishResena` (the server normalizes it). */
+export interface VeredictoInput {
+  aFavor: string[]
+  enContra: string[]
+  ticket?: string
+}
+
 export interface PublishResenaPayload {
   huecaMode: 'existente' | 'nueva'
   /** For 'existente': the hueca's slug. For 'nueva': ignored. */
@@ -72,7 +83,7 @@ export interface PublishResenaPayload {
   titulo: string
   tagline: string
   body: string
-  veredicto: string
+  veredicto: VeredictoInput
   heroId: string | null
   photos: PublishPhoto[]
   /** Optional crítico slug; the server defaults to the first active crítico. */
