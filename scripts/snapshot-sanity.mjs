@@ -111,9 +111,12 @@ async function main() {
   // --- 1. Resolve the read token (never log its value). ---------------------
   const loadedKeys = loadEnvFile(BLOG_ENV_PATH)
   const envFound = existsSync(BLOG_ENV_PATH)
+  // Log only the COUNT of keys loaded — never their names, which can be
+  // sensitive (e.g. SANITY_WRITE_TOKEN, ANTHROPIC_API_KEY) and would leak
+  // into CI logs.
   console.log(
     `[env] ${envFound ? 'loaded' : 'NOT FOUND'}: ${BLOG_ENV_PATH}` +
-      (envFound ? `  (keys: ${[...loadedKeys].join(', ') || 'none'})` : ''),
+      (envFound ? `  (${[...loadedKeys].length} keys loaded)` : ''),
   )
   const token =
     process.env.SANITY_READ_TOKEN || process.env.SANITY_WRITE_TOKEN || undefined
