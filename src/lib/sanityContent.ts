@@ -119,7 +119,8 @@ function mapCritico(c: Record<string, unknown>, urlFor: ReturnType<typeof makeUr
     nombre: c.nombre as string,
     avatar: urlFor(c.image as SanityImage | undefined),
     ciudad: c.ciudad as CriticoT['ciudad'],
-    reviews: 0, // not modeled on the Sanity `critico`; default for the UI.
+    // `reviews` is intentionally OMITTED (not modeled on the Sanity `critico`);
+    // mirrors scripts/snapshot-sanity.mjs so live reads match the seed.
     especialidad: (c.especialidad as string) ?? '',
     desde: typeof c.desde === 'number' ? c.desde : 0,
     bio: (Array.isArray(c.bio) ? c.bio : []) as CriticoT['bio'],

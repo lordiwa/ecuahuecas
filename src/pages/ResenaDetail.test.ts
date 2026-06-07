@@ -31,7 +31,6 @@ function baseCritico(over: Partial<Critico> = {}): Critico {
     slug: 'ana-paladar',
     nombre: 'Ana Paladar',
     ciudad: 'Quito',
-    reviews: 30,
     especialidad: 'Comida criolla',
     desde: 2018,
     bio: [],

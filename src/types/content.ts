@@ -72,7 +72,6 @@ export interface Critico {
   /** Resolved CDN avatar URL, if any. */
   avatar?: string
   ciudad: Ciudad
-  reviews: number
   especialidad: string
   desde: number
   /** Crítico bio as PortableText. */

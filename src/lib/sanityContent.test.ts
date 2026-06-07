@@ -155,7 +155,9 @@ describe('fetchContent (runtime Sanity mapper)', () => {
     expect(c.avatar).toBe('https://cdn.sanity.io/images/p/production/image-ccc.jpg')
     expect(c.especialidad).toBe('Encebollados')
     expect(c.desde).toBe(2008)
-    expect(c.reviews).toBe(0)
+    // `reviews` is intentionally NOT modeled on the critico (omitted, not 0):
+    // the mapped object must not carry the property at all.
+    expect('reviews' in c).toBe(false)
     // bio is the SAME raw PortableText array (not flattened to text).
     expect(c.bio).toBe(rawCritico.bio)
   })

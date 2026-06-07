@@ -188,7 +188,8 @@ async function main() {
     nombre: c.nombre,
     avatar: urlFor(c.image),
     ciudad: c.ciudad,
-    reviews: 0, // not modeled on the Sanity `critico`; default for the UI.
+    // `reviews` is intentionally OMITTED: it is not modeled on the Sanity
+    // `critico` doc, and hardcoding 0 rendered a misleading "0" in the UI.
     especialidad: c.especialidad ?? '',
     desde: typeof c.desde === 'number' ? c.desde : 0,
     // bio is PortableText (BlockContent); default to [] when absent.
