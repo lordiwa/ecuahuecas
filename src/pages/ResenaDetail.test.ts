@@ -165,8 +165,10 @@ describe('ResenaDetail hero', () => {
 })
 
 const GEO = { lat: -0.18, lng: -78.47 }
+// The href as it serializes in HTML output (the `&` is entity-escaped); in a
+// real browser this parses back to the canonical `?api=1&destination=...` URL.
 const MAPS_HREF =
-  'https://www.google.com/maps/dir/?api=1&destination=-0.18,-78.47'
+  'https://www.google.com/maps/dir/?api=1&amp;destination=-0.18,-78.47'
 
 describe('ResenaDetail "Dónde comer" hueca card (TASK-031)', () => {
   it('shows the hueca data (plato_estrella, direccion, horario) and PrecioDots', async () => {

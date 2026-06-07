@@ -6,6 +6,7 @@ import { BlogPostPreview } from 'blog-component'
 import { getResena, getHueca, getCritico } from '@/lib/content'
 import { ogImageUrl, absoluteUrl } from '@/lib/og'
 import Estrellas from '@/components/Estrellas.vue'
+import PrecioDots from '@/components/PrecioDots.vue'
 import Foto from '@/components/Foto.vue'
 
 const route = useRoute()
@@ -16,6 +17,20 @@ const critico = computed(() => (resena.value ? getCritico(resena.value.critico_i
 
 // PortableText `internalLink` slugs point at other reseñas → /resenas/:slug.
 const resolveInternalHref = (s: string) => `/resenas/${s}`
+
+// Google Maps "Cómo llegar" link, only meaningful when the hueca has coords.
+const mapsHref = computed(() => {
+  const c = hueca.value?.coords
+  return c ? `https://www.google.com/maps/dir/?api=1&destination=${c.lat},${c.lng}` : undefined
+})
+
+// The hueca's own photo gallery (distinct from the reseña hero). De-dupe a foto
+// that is literally the same URL as the hero to avoid showing it twice.
+const galeria = computed(() => {
+  const fotos = hueca.value?.fotos ?? []
+  const hero = resena.value?.imagen
+  return hero ? fotos.filter((f) => f !== hero) : fotos
+})
 
 // Per-page Open Graph. This is the most-shared page, so the og:image is the
 // reseña's OWN uploaded photo (resena.imagen) transformed to a 1200x630 card;
@@ -51,6 +66,23 @@ useHead(() => {
   <article v-if="resena" class="container section resena">
     <p class="eyebrow">{{ resena.fecha }} · por {{ critico?.nombre ?? '—' }}</p>
     <h1 class="h-display">{{ resena.titulo }}</h1>
+
+    <!-- Crítico byline: avatar (or branded placeholder) + linked name + especialidad. -->
+    <div v-if="critico" class="critico-byline">
+      <img
+        v-if="critico.avatar"
+        :src="critico.avatar"
+        alt=""
+        loading="lazy"
+        class="critico-byline__avatar"
+      />
+      <Foto v-else :seed="critico.slug" class="critico-byline__avatar" aspect="1/1" />
+      <span class="critico-byline__texto">
+        <RouterLink :to="`/criticos/${critico.slug}`" class="critico-byline__nombre">{{ critico.nombre }}</RouterLink>
+        <span v-if="critico.especialidad" class="critico-byline__especialidad">{{ critico.especialidad }}</span>
+      </span>
+    </div>
+
     <p class="resena-meta">
       <Estrellas :value="resena.rating" />
       <span class="mono-meta">{{ resena.rating.toFixed(1) }}</span>
@@ -81,6 +113,42 @@ useHead(() => {
         :resolve-internal-href="resolveInternalHref"
       />
     </div>
+
+    <!-- Hueca info card: data, photo gallery and actions (omitted when no hueca). -->
+    <section v-if="hueca" class="donde-comer">
+      <h2 class="h-titulo">Dónde comer</h2>
+
+      <div v-if="galeria.length" class="resena-galeria">
+        <img
+          v-for="(foto, i) in galeria"
+          :key="foto"
+          :src="foto"
+          alt=""
+          loading="lazy"
+          class="resena-galeria__foto"
+          :class="{ 'resena-galeria__foto--principal': i === 0 }"
+        />
+      </div>
+
+      <dl class="hueca-datos">
+        <div><dt>Plato estrella</dt><dd>{{ hueca.plato_estrella }}</dd></div>
+        <div><dt>Precio</dt><dd><PrecioDots :value="hueca.precio" /></dd></div>
+        <div><dt>Dirección</dt><dd>{{ hueca.direccion }}</dd></div>
+        <div><dt>Zona</dt><dd>{{ hueca.barrio }}, {{ hueca.ciudad }}</dd></div>
+        <div><dt>Horario</dt><dd>{{ hueca.horario }}</dd></div>
+      </dl>
+
+      <div class="donde-comer__acciones">
+        <a
+          v-if="mapsHref"
+          :href="mapsHref"
+          target="_blank"
+          rel="noopener"
+          class="btn"
+        >Cómo llegar</a>
+        <RouterLink :to="`/huecas/${hueca.slug}`" class="btn btn--ghost">Ver hueca</RouterLink>
+      </div>
+    </section>
 
     <aside v-if="resena.veredicto" class="veredicto">
       <h2 class="h-titulo">Veredicto</h2>
@@ -168,4 +236,59 @@ useHead(() => {
 .veredicto ul { list-style: none; padding: 0; font-family: var(--titulo); }
 .veredicto li { padding: 6px 0; border-bottom: 1px dashed var(--linea); }
 .veredicto-ticket { font-family: var(--mono); font-weight: 500; }
+
+/* Crítico byline: a compact avatar + linked name row under the title. */
+.critico-byline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.critico-byline__avatar {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  border: var(--borde);
+  overflow: hidden;
+}
+.critico-byline__texto { display: flex; flex-direction: column; line-height: 1.2; }
+.critico-byline__nombre { color: var(--rojo); font-weight: 700; font-family: var(--titulo); }
+.critico-byline__especialidad { font-family: var(--mono); font-size: 12px; opacity: 0.8; }
+
+/* "Dónde comer" card: hueca data + gallery + actions. */
+.donde-comer {
+  margin-top: 56px;
+  padding: 28px;
+  border: var(--borde);
+  border-radius: var(--radio-md);
+  box-shadow: var(--sombra-bloque);
+}
+.donde-comer .hueca-datos { display: grid; gap: 16px; margin-top: 20px; }
+.donde-comer .hueca-datos dt { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--rojo); }
+.donde-comer .hueca-datos dd { font-family: var(--titulo); font-size: 1.1rem; margin-top: 2px; }
+.donde-comer__acciones { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+.btn--ghost { background: transparent; }
+
+/*
+ * Hueca photo gallery in the reseña. Mirrors HuecaDetail's natural-photo
+ * pattern: full width, intrinsic height, no crop; the first photo spans the
+ * full row. Distinct class names so the reseña scope owns its own styles.
+ */
+.resena-galeria {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 20px;
+}
+.resena-galeria__foto {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: var(--borde);
+  border-radius: var(--radio-md);
+}
+.resena-galeria__foto--principal { grid-column: 1 / -1; }
+.resena-galeria:has(.resena-galeria__foto:only-child) { grid-template-columns: 1fr; }
 </style>
