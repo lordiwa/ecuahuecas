@@ -16,6 +16,8 @@ secrets/
 *.pem
 *.key
 firebase-admin*.json
+*firebase-adminsdk*.json
+*serviceAccount*.json
 
 # GSD runtime artifacts (commit specs in .planning/, not runtime state)
 .claude/worktrees/
